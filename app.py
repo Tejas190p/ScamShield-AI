@@ -1,7 +1,7 @@
 import re
 
 
-# Common warning patterns
+# Scam indicator patterns
 URGENT_WORDS = [
     "urgent",
     "immediately",
@@ -53,6 +53,36 @@ PERSONAL_INFO_WORDS = [
     "pan number",
 ]
 
+CONTACT_WORDS = [
+    "call me",
+    "call this number",
+    "contact me",
+    "whatsapp me",
+    "message me on whatsapp",
+    "send a message",
+]
+
+BANK_IMPERSONATION_WORDS = [
+    "bank security",
+    "bank verification",
+    "account verification",
+    "customer support",
+    "official bank",
+    "bank officer",
+    "income tax department",
+    "government officer",
+]
+
+TOO_GOOD_WORDS = [
+    "guaranteed profit",
+    "double your money",
+    "100% guaranteed",
+    "risk free",
+    "easy money",
+    "instant money",
+    "free gift",
+]
+
 
 def contains_pattern(text, patterns):
     text = text.lower()
@@ -102,6 +132,21 @@ def analyze_message(message):
         PERSONAL_INFO_WORDS
     )
 
+    contact_matches = contains_pattern(
+        message,
+        CONTACT_WORDS
+    )
+
+    bank_matches = contains_pattern(
+        message,
+        BANK_IMPERSONATION_WORDS
+    )
+
+    too_good_matches = contains_pattern(
+        message,
+        TOO_GOOD_WORDS
+    )
+
     urls = find_urls(message)
 
     if urgent_matches:
@@ -129,6 +174,21 @@ def analyze_message(message):
             "Request for sensitive personal information detected."
         )
 
+    if contact_matches:
+        indicators.append(
+            "Unusual contact or communication request detected."
+        )
+
+    if bank_matches:
+        indicators.append(
+            "Possible financial institution or authority impersonation language detected."
+        )
+
+    if too_good_matches:
+        indicators.append(
+            "Potentially unrealistic financial or promotional claim detected."
+        )
+
     if urls:
         indicators.append(
             f"Link detected ({len(urls)} link(s))."
@@ -140,6 +200,9 @@ def analyze_message(message):
         "reward": reward_matches,
         "threat": threat_matches,
         "personal_info": personal_info_matches,
+        "contact": contact_matches,
+        "bank": bank_matches,
+        "too_good": too_good_matches,
         "urls": urls,
         "indicators": indicators,
     }
@@ -163,10 +226,19 @@ def calculate_risk(result):
     if result["personal_info"]:
         score += 3
 
+    if result["contact"]:
+        score += 1
+
+    if result["bank"]:
+        score += 2
+
+    if result["too_good"]:
+        score += 2
+
     if result["urls"]:
         score += 1
 
-    if score >= 7:
+    if score >= 9:
         level = "HIGH"
 
     elif score >= 4:
@@ -222,13 +294,8 @@ def main():
     print("                 SCAMSHIELD AI")
     print("=" * 60)
 
-    print(
-        "\nPaste a suspicious message below."
-    )
-
-    print(
-        "Press Enter twice when finished."
-    )
+    print("\nPaste a suspicious message below.")
+    print("Press Enter twice when finished.")
 
     lines = []
 

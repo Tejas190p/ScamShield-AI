@@ -1,5 +1,7 @@
 import re
 import ipaddress
+import sqlite3
+from datetime import datetime
 from urllib.parse import urlparse
 
 
@@ -101,12 +103,102 @@ SHORTENERS = {
 
 URL_PATTERN = r"https?://[^\s<>]+|www\.[^\s<>]+"
 
+DATABASE_NAME = "scans.db"
+
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+def init_database():
+    connection = sqlite3.connect(DATABASE_NAME)
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scanned_at TEXT NOT NULL,
+            message TEXT NOT NULL,
+            risk_level TEXT NOT NULL,
+            risk_score INTEGER NOT NULL
+        )
+    """)
+
+    connection.commit()
+    connection.close()
+
+
+def save_scan(message, level, score):
+    connection = sqlite3.connect(DATABASE_NAME)
+
+    cursor = connection.cursor()
+
+    scanned_at = datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    cursor.execute("""
+        INSERT INTO scans
+        (scanned_at, message, risk_level, risk_score)
+        VALUES (?, ?, ?, ?)
+    """, (
+        scanned_at,
+        message,
+        level,
+        score
+    ))
+
+    connection.commit()
+    connection.close()
+
+
+def view_history():
+    connection = sqlite3.connect(DATABASE_NAME)
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT id, scanned_at, risk_level, risk_score, message
+        FROM scans
+        ORDER BY id DESC
+    """)
+
+    scans = cursor.fetchall()
+
+    connection.close()
+
+    print("\n" + "=" * 60)
+    print("                 SCAN HISTORY")
+    print("=" * 60)
+
+    if not scans:
+        print("\nNo previous scans found.")
+        return
+
+    for scan in scans:
+
+        scan_id = scan[0]
+        scanned_at = scan[1]
+        level = scan[2]
+        score = scan[3]
+        message = scan[4]
+
+        print(f"\nScan #{scan_id}")
+        print(f"Date: {scanned_at}")
+        print(f"Risk level: {level}")
+        print(f"Risk score: {score}")
+        print(f"Message: {message}")
+
+    print("\n" + "=" * 60)
+
 
 # ============================================================
 # TEXT HELPERS
 # ============================================================
 
 def contains_pattern(text, patterns):
+
     text = text.lower()
 
     return [
@@ -117,6 +209,7 @@ def contains_pattern(text, patterns):
 
 
 def find_urls(text):
+
     matches = re.findall(
         URL_PATTERN,
         text,
@@ -134,6 +227,7 @@ def find_urls(text):
 # ============================================================
 
 def analyze_url(raw_url):
+
     findings = []
 
     candidate = raw_url
@@ -142,18 +236,26 @@ def analyze_url(raw_url):
         candidate = "http://" + candidate
 
     try:
+
         parsed = urlparse(candidate)
+
         hostname = parsed.hostname
 
         if not hostname:
+
             return [
-                "Could not reliably parse this URL."
+                {
+                    "message":
+                        "Could not reliably parse this URL.",
+                    "points": 0
+                }
             ]
 
         hostname = hostname.lower().rstrip(".")
 
         # IP address
         try:
+
             ipaddress.ip_address(hostname)
 
             findings.append({
@@ -167,6 +269,7 @@ def analyze_url(raw_url):
 
         # URL shortener
         if hostname in SHORTENERS:
+
             findings.append({
                 "message":
                     "URL uses a link-shortening service; destination is hidden.",
@@ -175,6 +278,7 @@ def analyze_url(raw_url):
 
         # Punycode
         if "xn--" in hostname:
+
             findings.append({
                 "message":
                     "Domain contains punycode; inspect the domain carefully.",
@@ -183,17 +287,19 @@ def analyze_url(raw_url):
 
         # HTTP
         if parsed.scheme.lower() == "http":
+
             findings.append({
                 "message":
                     "URL uses HTTP rather than HTTPS.",
                 "points": 1
             })
 
-        # Username/password section
+        # Username/password
         if (
             parsed.username is not None
             or parsed.password is not None
         ):
+
             findings.append({
                 "message":
                     "URL contains an unexpected username/password section.",
@@ -202,13 +308,14 @@ def analyze_url(raw_url):
 
         # @ symbol
         if "@" in candidate:
+
             findings.append({
                 "message":
                     "URL contains an @ symbol that can make the destination confusing.",
                 "points": 2
             })
 
-        # Attention-grabbing terms
+        # Suspicious hostname terms
         suspicious_terms = [
             "login",
             "verify",
@@ -227,6 +334,7 @@ def analyze_url(raw_url):
         ]
 
         if matched_terms:
+
             findings.append({
                 "message":
                     "Domain contains attention-grabbing terms: "
@@ -235,6 +343,7 @@ def analyze_url(raw_url):
             })
 
         if not findings:
+
             findings.append({
                 "message":
                     "No listed URL warning patterns detected.",
@@ -242,6 +351,7 @@ def analyze_url(raw_url):
             })
 
     except (ValueError, UnicodeError):
+
         findings.append({
             "message":
                 "URL could not be analyzed reliably.",
@@ -258,6 +368,7 @@ def analyze_url(raw_url):
 def analyze_message(message):
 
     categories = {
+
         "urgent": contains_pattern(
             message,
             URGENT_WORDS
@@ -324,20 +435,30 @@ def analyze_message(message):
 def calculate_risk(result):
 
     score = 0
+
     reasons = []
 
     weights = {
+
         "urgent": 2,
+
         "money": 2,
+
         "reward": 2,
+
         "threat": 3,
+
         "personal_info": 3,
+
         "contact": 1,
+
         "bank": 2,
+
         "too_good": 2,
     }
 
     explanations = {
+
         "urgent":
             "Urgent or pressure-based language",
 
@@ -370,8 +491,11 @@ def calculate_risk(result):
             score += weight
 
             reasons.append({
-                "reason": explanations[category],
-                "points": weight
+                "reason":
+                    explanations[category],
+
+                "points":
+                    weight
             })
 
     # URL score
@@ -388,21 +512,26 @@ def calculate_risk(result):
                 reasons.append({
                     "reason":
                         finding["message"],
+
                     "points":
                         points
                 })
 
     # Risk level
     if score >= 7:
+
         level = "HIGH"
 
     elif score >= 4:
+
         level = "MEDIUM"
 
     elif score >= 1:
+
         level = "LOW"
 
     else:
+
         level = "NO OBVIOUS INDICATORS"
 
     return score, level, reasons
@@ -412,13 +541,19 @@ def calculate_risk(result):
 # RESULT DISPLAY
 # ============================================================
 
-def display_result(result, score, level, reasons):
+def display_result(
+    result,
+    score,
+    level,
+    reasons
+):
 
     print("\n" + "=" * 60)
     print("                 SCAMSHIELD AI")
     print("=" * 60)
 
     print(f"\nRisk level: {level}")
+
     print(f"Risk score: {score}")
 
     print("\nWhy this score?")
@@ -442,13 +577,16 @@ def display_result(result, score, level, reasons):
             "No warning indicators contributed to the score."
         )
 
+    # URL analysis
     if result["url_results"]:
 
         print("\nURL ANALYSIS")
 
         for item in result["url_results"]:
 
-            print(f"\nURL: {item['url']}")
+            print(
+                f"\nURL: {item['url']}"
+            )
 
             for finding in item["findings"]:
 
@@ -456,6 +594,7 @@ def display_result(result, score, level, reasons):
                     f"- {finding['message']}"
                 )
 
+    # Assessment
     print("\nAssessment:")
 
     if level == "HIGH":
@@ -497,13 +636,13 @@ def display_result(result, score, level, reasons):
 
 
 # ============================================================
-# MAIN PROGRAM
+# SCAN MESSAGE
 # ============================================================
 
-def main():
+def scan_message():
 
-    print("=" * 60)
-    print("                 SCAMSHIELD AI")
+    print("\n" + "=" * 60)
+    print("                 NEW SCAN")
     print("=" * 60)
 
     print(
@@ -530,6 +669,7 @@ def main():
     if not message:
 
         print("\nNo message entered.")
+
         return
 
     print("\nAnalyzing message...")
@@ -547,6 +687,66 @@ def main():
         reasons
     )
 
+    # Save scan to database
+    save_scan(
+        message,
+        level,
+        score
+    )
+
+    print("\nScan saved to SQLite history.")
+
+
+# ============================================================
+# MAIN MENU
+# ============================================================
+
+def main():
+
+    # Create database if it doesn't exist
+    init_database()
+
+    while True:
+
+        print("\n" + "=" * 60)
+        print("                 SCAMSHIELD AI")
+        print("=" * 60)
+
+        print("\n1. Scan a message")
+        print("2. View scan history")
+        print("3. Exit")
+
+        choice = input(
+            "\nChoose an option: "
+        ).strip()
+
+        if choice == "1":
+
+            scan_message()
+
+        elif choice == "2":
+
+            view_history()
+
+        elif choice == "3":
+
+            print(
+                "\nThanks for using ScamShield AI."
+            )
+
+            break
+
+        else:
+
+            print(
+                "\nInvalid choice. "
+                "Please select 1, 2, or 3."
+            )
+
+
+# ============================================================
+# PROGRAM START
+# ============================================================
 
 if __name__ == "__main__":
     main()

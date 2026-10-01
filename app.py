@@ -194,6 +194,106 @@ def view_history():
 
 
 # ============================================================
+# REPORTS & STATISTICS
+# ============================================================
+
+def view_reports():
+    connection = sqlite3.connect(DATABASE_NAME)
+
+    cursor = connection.cursor()
+
+    # Total scans
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM scans
+    """)
+
+    total_scans = cursor.fetchone()[0]
+
+    if total_scans == 0:
+        connection.close()
+
+        print("\n" + "=" * 60)
+        print("                 SCAMSHIELD REPORT")
+        print("=" * 60)
+        print("\nNo scan data available yet.")
+        print("Run some scans first.")
+        return
+
+    # Risk-level counts
+    cursor.execute("""
+        SELECT risk_level, COUNT(*)
+        FROM scans
+        GROUP BY risk_level
+    """)
+
+    level_counts = dict(cursor.fetchall())
+
+    high_count = level_counts.get("HIGH", 0)
+    medium_count = level_counts.get("MEDIUM", 0)
+    low_count = level_counts.get("LOW", 0)
+    no_indicator_count = level_counts.get(
+        "NO OBVIOUS INDICATORS",
+        0
+    )
+
+    # Average score
+    cursor.execute("""
+        SELECT AVG(risk_score)
+        FROM scans
+    """)
+
+    average_score = cursor.fetchone()[0]
+
+    # Highest score
+    cursor.execute("""
+        SELECT MAX(risk_score)
+        FROM scans
+    """)
+
+    highest_score = cursor.fetchone()[0]
+
+    # Lowest score
+    cursor.execute("""
+        SELECT MIN(risk_score)
+        FROM scans
+    """)
+
+    lowest_score = cursor.fetchone()[0]
+
+    connection.close()
+
+    print("\n" + "=" * 60)
+    print("                 SCAMSHIELD REPORT")
+    print("=" * 60)
+
+    print("\nOverall Statistics")
+
+    print(f"\nTotal scans: {total_scans}")
+
+    print(f"Average risk score: {average_score:.2f}")
+
+    print(f"Highest risk score: {highest_score}")
+
+    print(f"Lowest risk score: {lowest_score}")
+
+    print("\nRisk Distribution")
+
+    print(f"HIGH: {high_count}")
+
+    print(f"MEDIUM: {medium_count}")
+
+    print(f"LOW: {low_count}")
+
+    print(
+        f"NO OBVIOUS INDICATORS: "
+        f"{no_indicator_count}"
+    )
+
+    print("\n" + "=" * 60)
+
+
+# ============================================================
 # TEXT HELPERS
 # ============================================================
 
@@ -687,14 +787,16 @@ def scan_message():
         reasons
     )
 
-    # Save scan to database
+    # Save scan
     save_scan(
         message,
         level,
         score
     )
 
-    print("\nScan saved to SQLite history.")
+    print(
+        "\nScan saved to SQLite history."
+    )
 
 
 # ============================================================
@@ -714,7 +816,8 @@ def main():
 
         print("\n1. Scan a message")
         print("2. View scan history")
-        print("3. Exit")
+        print("3. View reports")
+        print("4. Exit")
 
         choice = input(
             "\nChoose an option: "
@@ -730,6 +833,10 @@ def main():
 
         elif choice == "3":
 
+            view_reports()
+
+        elif choice == "4":
+
             print(
                 "\nThanks for using ScamShield AI."
             )
@@ -740,7 +847,7 @@ def main():
 
             print(
                 "\nInvalid choice. "
-                "Please select 1, 2, or 3."
+                "Please select 1, 2, 3, or 4."
             )
 
 

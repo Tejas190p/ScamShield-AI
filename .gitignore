@@ -1,1 +1,3 @@
 scans.db
+__pycache__/
+*.pyc

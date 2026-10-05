@@ -5,13 +5,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app import analyze_message, calculate_risk
+from ai_service import analyze_with_ai
+
 
 DATABASE_NAME = "scans.db"
 
+
 app = FastAPI(
     title="ScamShield AI API",
-    description="API for analyzing suspicious messages and managing scan history.",
-    version="1.2.0",
+    description="AI-assisted API for analyzing suspicious messages.",
+    version="1.3.0",
 )
 
 
@@ -32,6 +35,7 @@ class ScanResponse(BaseModel):
     risk_level: str
     risk_score: int
     reasons: list
+    ai_analysis: str
     saved_to_history: bool
 
 
@@ -72,9 +76,14 @@ def scan_message(request: ScanRequest):
             detail="Message cannot be empty or whitespace only",
         )
 
+    # Python rule-based analysis
     result = analyze_message(message)
     score, level, reasons = calculate_risk(result)
 
+    # Gemini AI analysis
+    ai_analysis = analyze_with_ai(message)
+
+    # Save scan
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
             connection.execute(
@@ -102,6 +111,7 @@ def scan_message(request: ScanRequest):
         risk_level=level,
         risk_score=score,
         reasons=reasons,
+        ai_analysis=ai_analysis,
         saved_to_history=True,
     )
 

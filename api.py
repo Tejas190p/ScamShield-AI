@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from app import analyze_message, calculate_risk
 from ai_service import analyze_with_ai
+from decision_engine import build_final_assessment
 
 
 DATABASE_NAME = "scans.db"
@@ -14,7 +15,7 @@ DATABASE_NAME = "scans.db"
 app = FastAPI(
     title="ScamShield AI API",
     description="AI-assisted API for analyzing suspicious messages.",
-    version="1.3.0",
+    version="1.4.0",
 )
 
 
@@ -32,10 +33,12 @@ class ScanRequest(BaseModel):
 
 class ScanResponse(BaseModel):
     message: str
-    risk_level: str
+    final_risk_level: str
     risk_score: int
-    reasons: list
+    assessment: str
+    warning_indicators: list
     ai_analysis: str
+    recommended_action: str
     saved_to_history: bool
 
 
@@ -76,14 +79,22 @@ def scan_message(request: ScanRequest):
             detail="Message cannot be empty or whitespace only",
         )
 
-    # Python rule-based analysis
+    # 1. Python rule-based detection
     result = analyze_message(message)
     score, level, reasons = calculate_risk(result)
 
-    # Gemini AI analysis
+    # 2. Gemini AI analysis
     ai_analysis = analyze_with_ai(message)
 
-    # Save scan
+    # 3. Build combined final assessment
+    final_result = build_final_assessment(
+        risk_level=level,
+        risk_score=score,
+        reasons=reasons,
+        ai_analysis=ai_analysis,
+    )
+
+    # 4. Save scan to SQLite
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
             connection.execute(
@@ -108,10 +119,12 @@ def scan_message(request: ScanRequest):
 
     return ScanResponse(
         message=message,
-        risk_level=level,
-        risk_score=score,
-        reasons=reasons,
-        ai_analysis=ai_analysis,
+        final_risk_level=final_result["final_risk_level"],
+        risk_score=final_result["risk_score"],
+        assessment=final_result["assessment"],
+        warning_indicators=final_result["warning_indicators"],
+        ai_analysis=final_result["ai_analysis"],
+        recommended_action=final_result["recommended_action"],
         saved_to_history=True,
     )
 

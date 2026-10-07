@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app import analyze_message, calculate_risk
 from ai_service import analyze_with_ai
 from decision_engine import build_final_assessment
+from category_engine import detect_category
 
 
 DATABASE_NAME = "scans.db"
@@ -15,9 +16,13 @@ DATABASE_NAME = "scans.db"
 app = FastAPI(
     title="ScamShield AI API",
     description="AI-assisted API for analyzing suspicious messages.",
-    version="1.4.0",
+    version="1.5.0",
 )
 
+
+# ============================================================
+# REQUEST MODEL
+# ============================================================
 
 class ScanRequest(BaseModel):
     message: str = Field(
@@ -31,16 +36,25 @@ class ScanRequest(BaseModel):
     )
 
 
+# ============================================================
+# RESPONSE MODEL
+# ============================================================
+
 class ScanResponse(BaseModel):
     message: str
     final_risk_level: str
     risk_score: int
+    category: str
     assessment: str
     warning_indicators: list
     ai_analysis: str
     recommended_action: str
     saved_to_history: bool
 
+
+# ============================================================
+# HOME
+# ============================================================
 
 @app.get("/")
 def home():
@@ -50,6 +64,10 @@ def home():
         "version": app.version,
     }
 
+
+# ============================================================
+# HEALTH CHECK
+# ============================================================
 
 @app.get("/health")
 def health():
@@ -69,24 +87,49 @@ def health():
         )
 
 
+# ============================================================
+# SCAN MESSAGE
+# ============================================================
+
 @app.post("/scan", response_model=ScanResponse)
 def scan_message(request: ScanRequest):
+
     message = request.message.strip()
 
+    # Prevent empty or whitespace-only messages
     if not message:
         raise HTTPException(
             status_code=422,
             detail="Message cannot be empty or whitespace only",
         )
 
-    # 1. Python rule-based detection
+    # --------------------------------------------------------
+    # 1. Rule-based detection
+    # --------------------------------------------------------
+
     result = analyze_message(message)
+
     score, level, reasons = calculate_risk(result)
 
-    # 2. Gemini AI analysis
+    # --------------------------------------------------------
+    # 2. Detect scam category
+    # --------------------------------------------------------
+
+    category = detect_category(
+        message,
+        result,
+    )
+
+    # --------------------------------------------------------
+    # 3. Gemini AI analysis
+    # --------------------------------------------------------
+
     ai_analysis = analyze_with_ai(message)
 
-    # 3. Build combined final assessment
+    # --------------------------------------------------------
+    # 4. Build final assessment
+    # --------------------------------------------------------
+
     final_result = build_final_assessment(
         risk_level=level,
         risk_score=score,
@@ -94,9 +137,13 @@ def scan_message(request: ScanRequest):
         ai_analysis=ai_analysis,
     )
 
-    # 4. Save scan to SQLite
+    # --------------------------------------------------------
+    # 5. Save scan to SQLite
+    # --------------------------------------------------------
+
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
+
             connection.execute(
                 """
                 INSERT INTO scans
@@ -117,10 +164,15 @@ def scan_message(request: ScanRequest):
             detail="Could not save scan history",
         )
 
+    # --------------------------------------------------------
+    # 6. Return final result
+    # --------------------------------------------------------
+
     return ScanResponse(
         message=message,
         final_risk_level=final_result["final_risk_level"],
         risk_score=final_result["risk_score"],
+        category=category,
         assessment=final_result["assessment"],
         warning_indicators=final_result["warning_indicators"],
         ai_analysis=final_result["ai_analysis"],
@@ -129,8 +181,13 @@ def scan_message(request: ScanRequest):
     )
 
 
+# ============================================================
+# SCAN HISTORY
+# ============================================================
+
 @app.get("/history")
 def scan_history(limit: int = 20):
+
     if not 1 <= limit <= 100:
         raise HTTPException(
             status_code=422,
@@ -139,11 +196,17 @@ def scan_history(limit: int = 20):
 
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
+
             connection.row_factory = sqlite3.Row
 
             rows = connection.execute(
                 """
-                SELECT id, scanned_at, message, risk_level, risk_score
+                SELECT
+                    id,
+                    scanned_at,
+                    message,
+                    risk_level,
+                    risk_score
                 FROM scans
                 ORDER BY id DESC
                 LIMIT ?

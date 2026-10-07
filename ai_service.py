@@ -3,10 +3,22 @@ from google import genai
 
 
 def analyze_with_ai(message: str) -> str:
+    """
+    Generate an AI explanation for a suspicious message.
+
+    If the AI service is temporarily unavailable,
+    return a safe fallback instead of exposing
+    provider errors to the user.
+    """
+
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        return "AI analysis unavailable: GEMINI_API_KEY is not configured."
+        return (
+            "AI explanation is unavailable because the Gemini API key "
+            "is not configured. The assessment is based on ScamShield's "
+            "rule-based detection engine."
+        )
 
     try:
         client = genai.Client(api_key=api_key)
@@ -23,7 +35,7 @@ Message:
 Give a short explanation covering:
 
 1. Whether the message contains suspicious indicators.
-2. The main warning signs you found.
+2. The main warning signs.
 3. What the user should do safely.
 
 Do not claim with certainty that the message is a scam.
@@ -38,5 +50,9 @@ Keep the response clear and practical.
 
         return interaction.output_text.strip()
 
-    except Exception as error:
-        return f"AI analysis unavailable: {error}"
+    except Exception:
+        return (
+            "AI explanation is temporarily unavailable. "
+            "The assessment below is based on ScamShield's "
+            "rule-based detection engine."
+        )

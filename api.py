@@ -8,6 +8,8 @@ from app import analyze_message, calculate_risk
 from ai_service import analyze_with_ai
 from decision_engine import build_final_assessment
 from category_engine import detect_category
+from category_signals import detect_category_signals
+from risk_engine import merge_risk_signals, get_risk_level
 
 
 DATABASE_NAME = "scans.db"
@@ -16,13 +18,9 @@ DATABASE_NAME = "scans.db"
 app = FastAPI(
     title="ScamShield AI API",
     description="AI-assisted API for analyzing suspicious messages.",
-    version="1.5.0",
+    version="1.6.0",
 )
 
-
-# ============================================================
-# REQUEST MODEL
-# ============================================================
 
 class ScanRequest(BaseModel):
     message: str = Field(
@@ -36,10 +34,6 @@ class ScanRequest(BaseModel):
     )
 
 
-# ============================================================
-# RESPONSE MODEL
-# ============================================================
-
 class ScanResponse(BaseModel):
     message: str
     final_risk_level: str
@@ -52,10 +46,6 @@ class ScanResponse(BaseModel):
     saved_to_history: bool
 
 
-# ============================================================
-# HOME
-# ============================================================
-
 @app.get("/")
 def home():
     return {
@@ -64,10 +54,6 @@ def home():
         "version": app.version,
     }
 
-
-# ============================================================
-# HEALTH CHECK
-# ============================================================
 
 @app.get("/health")
 def health():
@@ -87,48 +73,65 @@ def health():
         )
 
 
-# ============================================================
-# SCAN MESSAGE
-# ============================================================
-
 @app.post("/scan", response_model=ScanResponse)
 def scan_message(request: ScanRequest):
 
     message = request.message.strip()
 
-    # Prevent empty or whitespace-only messages
     if not message:
         raise HTTPException(
             status_code=422,
             detail="Message cannot be empty or whitespace only",
         )
 
-    # --------------------------------------------------------
-    # 1. Rule-based detection
-    # --------------------------------------------------------
+    # ========================================================
+    # 1. BASE RULE-BASED DETECTION
+    # ========================================================
 
     result = analyze_message(message)
 
     score, level, reasons = calculate_risk(result)
 
-    # --------------------------------------------------------
-    # 2. Detect scam category
-    # --------------------------------------------------------
+    # ========================================================
+    # 2. DETECT SCAM CATEGORY
+    # ========================================================
 
     category = detect_category(
         message,
         result,
     )
 
-    # --------------------------------------------------------
-    # 3. Gemini AI analysis
-    # --------------------------------------------------------
+    # ========================================================
+    # 3. CATEGORY-SPECIFIC SIGNALS
+    # ========================================================
+
+    category_signals = detect_category_signals(
+        message,
+        category,
+    )
+
+    # ========================================================
+    # 4. MERGE SIGNALS WITHOUT DOUBLE-COUNTING
+    # ========================================================
+
+    score, reasons = merge_risk_signals(
+        base_score=score,
+        base_reasons=reasons,
+        category_signals=category_signals,
+    )
+
+    # Recalculate final risk level
+    level = get_risk_level(score)
+
+    # ========================================================
+    # 5. GEMINI AI ANALYSIS
+    # ========================================================
 
     ai_analysis = analyze_with_ai(message)
 
-    # --------------------------------------------------------
-    # 4. Build final assessment
-    # --------------------------------------------------------
+    # ========================================================
+    # 6. BUILD FINAL ASSESSMENT
+    # ========================================================
 
     final_result = build_final_assessment(
         risk_level=level,
@@ -137,9 +140,9 @@ def scan_message(request: ScanRequest):
         ai_analysis=ai_analysis,
     )
 
-    # --------------------------------------------------------
-    # 5. Save scan to SQLite
-    # --------------------------------------------------------
+    # ========================================================
+    # 7. SAVE SCAN TO SQLITE
+    # ========================================================
 
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
@@ -164,9 +167,9 @@ def scan_message(request: ScanRequest):
             detail="Could not save scan history",
         )
 
-    # --------------------------------------------------------
-    # 6. Return final result
-    # --------------------------------------------------------
+    # ========================================================
+    # 8. RETURN FINAL RESULT
+    # ========================================================
 
     return ScanResponse(
         message=message,
@@ -175,15 +178,11 @@ def scan_message(request: ScanRequest):
         category=category,
         assessment=final_result["assessment"],
         warning_indicators=final_result["warning_indicators"],
-        ai_analysis=final_result["ai_analysis"],
+        ai_analysis=ai_analysis,
         recommended_action=final_result["recommended_action"],
         saved_to_history=True,
     )
 
-
-# ============================================================
-# SCAN HISTORY
-# ============================================================
 
 @app.get("/history")
 def scan_history(limit: int = 20):

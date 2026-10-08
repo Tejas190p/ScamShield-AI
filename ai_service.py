@@ -1,14 +1,14 @@
 import os
+
 from google import genai
 
 
 def analyze_with_ai(message: str) -> str:
     """
-    Generate an AI explanation for a suspicious message.
+    Generate a concise AI explanation for a suspicious message.
 
-    If the AI service is temporarily unavailable,
-    return a safe fallback instead of exposing
-    provider errors to the user.
+    The AI provides supporting analysis only.
+    The rule-based engine remains responsible for the risk score.
     """
 
     api_key = os.getenv("GEMINI_API_KEY")
@@ -24,23 +24,27 @@ def analyze_with_ai(message: str) -> str:
         client = genai.Client(api_key=api_key)
 
         prompt = f"""
-You are a scam-awareness assistant.
+You are ScamShield AI, a concise scam-awareness assistant.
 
-Analyze the following message for suspicious or potentially fraudulent
-indicators.
+Analyze this message:
 
-Message:
 {message}
 
-Give a short explanation covering:
+Return a short response using EXACTLY this structure:
 
-1. Whether the message contains suspicious indicators.
-2. The main warning signs.
-3. What the user should do safely.
+Suspicious indicators:
+- Write 2 to 4 important warning signs.
+- Keep each point short.
 
-Do not claim with certainty that the message is a scam.
-Do not ask the user to share passwords, OTPs, CVVs, or other sensitive data.
-Keep the response clear and practical.
+Safe action:
+- Give 2 or 3 practical safety actions.
+
+Rules:
+- Do not claim with certainty that the message is a scam.
+- Do not ask the user for passwords, OTPs, CVVs, PINs, or other sensitive data.
+- Do not invent facts about the sender or company.
+- Focus only on evidence present in the message.
+- Keep the complete response under 150 words.
 """
 
         interaction = client.interactions.create(
@@ -48,7 +52,15 @@ Keep the response clear and practical.
             input=prompt,
         )
 
-        return interaction.output_text.strip()
+        response = interaction.output_text.strip()
+
+        if not response:
+            return (
+                "AI explanation was empty. The assessment is based on "
+                "ScamShield's rule-based detection engine."
+            )
+
+        return response
 
     except Exception:
         return (

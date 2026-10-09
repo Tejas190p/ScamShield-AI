@@ -1,7 +1,11 @@
+
 from datetime import datetime, timezone
+from pathlib import Path
 import sqlite3
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app import analyze_message, calculate_risk
@@ -12,15 +16,46 @@ from category_signals import detect_category_signals
 from risk_engine import merge_risk_signals, get_risk_level
 
 
-DATABASE_NAME = "scans.db"
+# ==========================================
+# CONFIGURATION
+# ==========================================
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+DATABASE_NAME = str(BASE_DIR / "scans.db")
 
 
 app = FastAPI(
     title="ScamShield AI API",
     description="AI-assisted API for analyzing suspicious messages.",
-    version="1.6.0",
+    version="1.7.0",
 )
 
+
+# ==========================================
+# WEBSITE FRONTEND
+# ==========================================
+
+if not STATIC_DIR.is_dir():
+    raise RuntimeError(
+        f"Static website folder was not found: {STATIC_DIR}"
+    )
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str(STATIC_DIR)),
+    name="static",
+)
+
+
+@app.get("/", include_in_schema=False)
+def serve_homepage():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+# ==========================================
+# REQUEST AND RESPONSE MODELS
+# ==========================================
 
 class ScanRequest(BaseModel):
     message: str = Field(
@@ -46,14 +81,9 @@ class ScanResponse(BaseModel):
     saved_to_history: bool
 
 
-@app.get("/")
-def home():
-    return {
-        "name": "ScamShield AI",
-        "status": "online",
-        "version": app.version,
-    }
-
+# ==========================================
+# HOME AND HEALTH
+# ==========================================
 
 @app.get("/health")
 def health():
@@ -73,6 +103,10 @@ def health():
         )
 
 
+# ==========================================
+# MESSAGE SCANNING
+# ==========================================
+
 @app.post("/scan", response_model=ScanResponse)
 def scan_message(request: ScanRequest):
 
@@ -84,55 +118,35 @@ def scan_message(request: ScanRequest):
             detail="Message cannot be empty or whitespace only",
         )
 
-    # ========================================================
     # 1. BASE RULE-BASED DETECTION
-    # ========================================================
-
     result = analyze_message(message)
-
     score, level, reasons = calculate_risk(result)
 
-    # ========================================================
     # 2. DETECT SCAM CATEGORY
-    # ========================================================
-
     category = detect_category(
         message,
         result,
     )
 
-    # ========================================================
     # 3. CATEGORY-SPECIFIC SIGNALS
-    # ========================================================
-
     category_signals = detect_category_signals(
         message,
         category,
     )
 
-    # ========================================================
     # 4. MERGE SIGNALS WITHOUT DOUBLE-COUNTING
-    # ========================================================
-
     score, reasons = merge_risk_signals(
         base_score=score,
         base_reasons=reasons,
         category_signals=category_signals,
     )
 
-    # Recalculate final risk level
     level = get_risk_level(score)
 
-    # ========================================================
     # 5. GEMINI AI ANALYSIS
-    # ========================================================
-
     ai_analysis = analyze_with_ai(message)
 
-    # ========================================================
     # 6. BUILD FINAL ASSESSMENT
-    # ========================================================
-
     final_result = build_final_assessment(
         risk_level=level,
         risk_score=score,
@@ -140,13 +154,9 @@ def scan_message(request: ScanRequest):
         ai_analysis=ai_analysis,
     )
 
-    # ========================================================
     # 7. SAVE SCAN TO SQLITE
-    # ========================================================
-
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
-
             connection.execute(
                 """
                 INSERT INTO scans
@@ -167,10 +177,7 @@ def scan_message(request: ScanRequest):
             detail="Could not save scan history",
         )
 
-    # ========================================================
     # 8. RETURN FINAL RESULT
-    # ========================================================
-
     return ScanResponse(
         message=message,
         final_risk_level=final_result["final_risk_level"],
@@ -184,6 +191,10 @@ def scan_message(request: ScanRequest):
     )
 
 
+# ==========================================
+# SCAN HISTORY
+# ==========================================
+
 @app.get("/history")
 def scan_history(limit: int = 20):
 
@@ -195,7 +206,6 @@ def scan_history(limit: int = 20):
 
     try:
         with sqlite3.connect(DATABASE_NAME) as connection:
-
             connection.row_factory = sqlite3.Row
 
             rows = connection.execute(

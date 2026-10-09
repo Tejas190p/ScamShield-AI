@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <title>ScamShield AI — Message Security</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-icon">S</span>
+      <span>ScamShield<span class="accent"> AI</span></span>
+    </a>
+    <span class="status"><span class="dot"></span> AI protection</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">YOUR DIGITAL SAFETY ASSISTANT</div>
+      <h1>Think before<br><span class="gradient">you click.</span></h1>
+      <p>Analyze suspicious messages, uncover warning signs, and make safer decisions with AI-assisted scam detection.</p>
+    </section>
+
+    <section class="analyzer panel">
+      <div class="section-heading">
+        <div>
+          <span class="step-label">MESSAGE ANALYZER</span>
+          <h2>Check a suspicious message</h2>
+        </div>
+        <span class="shield">◆ Protected analysis</span>
+      </div>
+
+      <label for="message">Paste your SMS, email, or job offer</label>
+      <textarea id="message" maxlength="10000"
+        placeholder="Example: Your bank account will be suspended. Send your OTP immediately..."
+        aria-describedby="char-count"></textarea>
+
+      <div class="input-footer">
+        <span id="char-count">0 / 10000</span>
+        <button id="clear-btn" class="text-button" type="button">Clear message</button>
+      </div>
+
+      <button id="analyze-btn" class="primary-button" type="button">
+        <span id="button-text">Analyze message <span aria-hidden="true">→</span></span>
+      </button>
+
+      <p class="privacy-note">Never paste real passwords, OTPs, PINs, or other private information.</p>
+      <p id="error-message" class="error" role="alert" hidden></p>
+    </section>
+
+    <section id="results" class="results" aria-live="polite" hidden>
+      <div class="section-heading">
+        <div>
+          <span class="step-label">ANALYSIS REPORT</span>
+          <h2>Your results</h2>
+        </div>
+      </div>
+
+      <div class="panel risk-panel">
+        <div class="risk-top">
+          <div>
+            <span class="muted">DETECTED RISK</span>
+            <h3 id="risk-level">Analyzing...</h3>
+            <p id="assessment"></p>
+          </div>
+          <div class="score-circle">
+            <strong id="risk-score">0</strong>
+            <span>risk points</span>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span>Category</span>
+          <strong id="category">—</strong>
+        </div>
+      </div>
+
+      <div class="panel result-section">
+        <span class="step-label">EVIDENCE</span>
+        <h3>Warning indicators</h3>
+        <ul id="indicators"></ul>
+      </div>
+
+      <div class="panel result-section">
+        <span class="step-label">AI INSIGHTS</span>
+        <h3>What the AI found</h3>
+        <p id="ai-analysis" class="ai-copy"></p>
+      </div>
+
+      <div class="panel action-panel">
+        <span class="step-label">RECOMMENDED NEXT STEP</span>
+        <p id="recommended-action"></p>
+      </div>
+
+      <p class="disclaimer">ScamShield identifies warning indicators; it cannot prove that a message is fraudulent or guarantee that a message is safe.</p>
+    </section>
+
+    <footer>
+      <span>ScamShield AI</span>
+      <span>Stay alert. Stay protected.</span>
+    </footer>
+  </main>
+</body>
+</html>

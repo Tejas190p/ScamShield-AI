@@ -5,13 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="Analyze suspicious messages and discover potential scam warning signs with ScamShield AI.">
   <title>ScamShield AI — Message Security</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/script.js" defer></script>
 </head>
+
 <body>
   <header class="topbar">
-    <a class="brand" href="/">
+    <a class="brand" href="/" aria-label="ScamShield AI home">
       <span class="brand-icon">S</span>
       <span>ScamShield<span class="accent"> AI</span></span>
     </a>
@@ -19,12 +21,17 @@
   </header>
 
   <main class="container">
+    <!-- Hero -->
     <section class="hero">
       <div class="eyebrow">YOUR DIGITAL SAFETY ASSISTANT</div>
       <h1>Think before<br><span class="gradient">you click.</span></h1>
-      <p>Analyze suspicious messages, uncover warning signs, and make safer decisions with AI-assisted scam detection.</p>
+      <p>
+        Analyze suspicious messages, uncover warning signs, and make
+        safer decisions with AI-assisted scam detection.
+      </p>
     </section>
 
+    <!-- Message Analyzer -->
     <section class="analyzer panel">
       <div class="section-heading">
         <div>
@@ -35,23 +42,33 @@
       </div>
 
       <label for="message">Paste your SMS, email, or job offer</label>
-      <textarea id="message" maxlength="10000"
+      <textarea
+        id="message"
+        maxlength="10000"
         placeholder="Example: Your bank account will be suspended. Send your OTP immediately..."
-        aria-describedby="char-count"></textarea>
+        aria-describedby="char-count"
+      ></textarea>
 
       <div class="input-footer">
         <span id="char-count">0 / 10000</span>
-        <button id="clear-btn" class="text-button" type="button">Clear message</button>
+        <button id="clear-btn" class="text-button" type="button">
+          Clear message
+        </button>
       </div>
 
       <button id="analyze-btn" class="primary-button" type="button">
-        <span id="button-text">Analyze message <span aria-hidden="true">→</span></span>
+        <span id="button-text">
+          Analyze message <span aria-hidden="true">→</span>
+        </span>
       </button>
 
-      <p class="privacy-note">Never paste real passwords, OTPs, PINs, or other private information.</p>
+      <p class="privacy-note">
+        Never paste real passwords, OTPs, PINs, or other private information.
+      </p>
       <p id="error-message" class="error" role="alert" hidden></p>
     </section>
 
+    <!-- Current Analysis Results -->
     <section id="results" class="results" aria-live="polite" hidden>
       <div class="section-heading">
         <div>
@@ -67,11 +84,13 @@
             <h3 id="risk-level">Analyzing...</h3>
             <p id="assessment"></p>
           </div>
+
           <div class="score-circle">
             <strong id="risk-score">0</strong>
             <span>risk points</span>
           </div>
         </div>
+
         <div class="meta-row">
           <span>Category</span>
           <strong id="category">—</strong>
@@ -95,9 +114,112 @@
         <p id="recommended-action"></p>
       </div>
 
-      <p class="disclaimer">ScamShield identifies warning indicators; it cannot prove that a message is fraudulent or guarantee that a message is safe.</p>
+      <p class="disclaimer">
+        ScamShield identifies warning indicators; it cannot prove that a
+        message is fraudulent or guarantee that a message is safe.
+      </p>
     </section>
 
+    <!-- Day 49: Scan History Dashboard -->
+    <section id="history-dashboard" class="history-dashboard panel">
+      <div class="section-heading">
+        <div>
+          <span class="step-label">YOUR ACTIVITY</span>
+          <h2>Scan History</h2>
+          <p class="history-subtitle">
+            Review your previous message analyses.
+          </p>
+        </div>
+
+        <button
+          id="history-refresh"
+          class="text-button"
+          type="button"
+        >
+          ↻ Refresh
+        </button>
+      </div>
+
+      <!-- Search and risk filter -->
+      <div class="history-toolbar">
+        <input
+          id="history-search"
+          type="search"
+          placeholder="Search scanned messages..."
+          aria-label="Search scan history"
+        >
+
+        <select
+          id="history-filter"
+          aria-label="Filter by risk level"
+        >
+          <option value="ALL">All risk levels</option>
+          <option value="HIGH">High risk</option>
+          <option value="MEDIUM">Medium risk</option>
+          <option value="LOW">Low risk</option>
+          <option value="NO OBVIOUS INDICATORS">
+            No obvious indicators
+          </option>
+        </select>
+      </div>
+
+      <p id="history-count" class="history-subtitle">
+        Loading history...
+      </p>
+
+      <p id="history-error" class="error" role="alert" hidden></p>
+
+      <!-- History entries are added by script.js -->
+      <div id="history-list" class="history-list"></div>
+
+      <!-- Empty state -->
+      <div id="history-empty" class="history-empty" hidden>
+        <h3>No scans found</h3>
+        <p>Analyze a message or change your search filters.</p>
+      </div>
+
+      <!-- Selected saved scan details -->
+      <div id="history-detail" class="history-detail" hidden>
+        <div class="section-heading">
+          <div>
+            <span class="step-label">SAVED REPORT</span>
+            <h3>Previous scan details</h3>
+          </div>
+
+          <button
+            id="history-close"
+            class="text-button"
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+
+        <div class="history-detail-grid">
+          <div>
+            <span class="muted">RISK LEVEL</span>
+            <h3 id="detail-risk">—</h3>
+          </div>
+
+          <div>
+            <span class="muted">RISK SCORE</span>
+            <h3 id="detail-score">—</h3>
+          </div>
+        </div>
+
+        <p class="muted">Scan date</p>
+        <p id="detail-date"></p>
+
+        <p class="muted">Original message</p>
+        <pre id="detail-message" class="history-message"></pre>
+
+        <p class="history-subtitle">
+          This is a saved summary, not a newly generated AI report.
+        </p>
+      </div>
+    </section>
+
+    <!-- Footer -->
     <footer>
       <span>ScamShield AI</span>
       <span>Stay alert. Stay protected.</span>

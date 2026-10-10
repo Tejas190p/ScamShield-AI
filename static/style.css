@@ -1,6 +1,7 @@
 
 /* =========================================
    ScamShield AI — Main Website Styles
+  
    ========================================= */
 
 :root {
@@ -50,7 +51,9 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input,
+select {
   font: inherit;
 }
 
@@ -60,6 +63,8 @@ button {
 
 button:focus-visible,
 textarea:focus-visible,
+input:focus-visible,
+select:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 4px;
@@ -68,6 +73,10 @@ a:focus-visible {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 /* Top navigation */
@@ -268,8 +277,13 @@ textarea:focus {
   cursor: pointer;
 }
 
-.text-button:hover {
+.text-button:hover:not(:disabled) {
   color: white;
+}
+
+.text-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .primary-button {
@@ -496,7 +510,7 @@ textarea:focus {
   text-align: center;
 }
 
-/* Risk levels — JavaScript can apply these classes */
+/* Risk levels */
 
 .risk-high .risk-top h3 {
   color: var(--red);
@@ -512,6 +526,225 @@ textarea:focus {
 
 .risk-safe .risk-top h3 {
   color: var(--green);
+}
+
+/* =========================================
+   DAY 49 — SCAN HISTORY DASHBOARD
+   ========================================= */
+
+.history-dashboard {
+  margin-top: 28px;
+  padding: 25px;
+  scroll-margin-top: 24px;
+}
+
+.history-dashboard .section-heading {
+  margin-bottom: 20px;
+}
+
+.history-subtitle {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.history-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+
+.history-toolbar input,
+.history-toolbar select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid rgba(151, 165, 205, 0.2);
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(5, 9, 20, 0.7);
+}
+
+.history-toolbar input::placeholder {
+  color: #687590;
+}
+
+.history-toolbar input:focus,
+.history-toolbar select:focus {
+  border-color: var(--purple);
+}
+
+.history-toolbar select option {
+  color: var(--text);
+  background: var(--bg-soft);
+}
+
+#history-count {
+  margin: 12px 0;
+  font-size: 11px;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 15px;
+  border: 1px solid rgba(151, 165, 205, 0.14);
+  border-radius: 13px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.025);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.2s;
+}
+
+.history-item:hover {
+  border-color: rgba(155, 120, 255, 0.6);
+  background: rgba(124, 58, 237, 0.08);
+  transform: translateY(-1px);
+}
+
+.history-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-message {
+  display: block;
+  color: #e1e7f7;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.history-item-date {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.history-item-meta {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.history-risk {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.history-risk.risk-high {
+  color: var(--red);
+}
+
+.history-risk.risk-medium {
+  color: var(--yellow);
+}
+
+.history-risk.risk-low {
+  color: var(--blue);
+}
+
+.history-risk.risk-safe {
+  color: var(--green);
+}
+
+.history-score {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.history-empty {
+  padding: 26px 12px;
+  border: 1px dashed rgba(151, 165, 205, 0.2);
+  border-radius: 13px;
+  text-align: center;
+}
+
+.history-empty h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.history-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-detail {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid rgba(155, 120, 255, 0.28);
+  border-radius: 15px;
+  background: rgba(155, 120, 255, 0.045);
+  scroll-margin-top: 24px;
+}
+
+.history-detail .section-heading {
+  margin-bottom: 18px;
+}
+
+.history-detail .section-heading h3 {
+  margin: 5px 0 0;
+  font-size: 17px;
+}
+
+.history-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.history-detail-grid > div {
+  padding: 14px;
+  border: 1px solid rgba(151, 165, 205, 0.12);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.history-detail-grid h3 {
+  margin: 6px 0 0;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.history-detail > p {
+  margin: 12px 0 6px;
+}
+
+.history-message {
+  max-height: 260px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgba(151, 165, 205, 0.12);
+  border-radius: 11px;
+  color: #dce3f6;
+  background: rgba(5, 9, 20, 0.6);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Footer */
@@ -593,6 +826,38 @@ footer {
 
   .score-circle strong {
     font-size: 24px;
+  }
+
+  .history-dashboard {
+    padding: 18px;
+  }
+
+  .history-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .history-item {
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .history-item-meta {
+    max-width: 95px;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .history-risk {
+    overflow-wrap: anywhere;
+  }
+
+  .history-detail {
+    padding: 14px;
+  }
+
+  .history-detail-grid {
+    gap: 9px;
   }
 
   footer {

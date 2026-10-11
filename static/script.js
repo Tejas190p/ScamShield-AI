@@ -1,7 +1,7 @@
 
 "use strict";
 
-// ScamShield AI — : Analyzer + Scan History Dashboard
+// ScamShield AI — Analyzer + Scan History + Analytics Dashboard
 
 // ============================================
 // MESSAGE ANALYZER
@@ -24,8 +24,6 @@ const aiAnalysisElement = document.getElementById("ai-analysis");
 const recommendedActionElement = document.getElementById(
   "recommended-action"
 );
-
-const originalButtonText = buttonText.innerHTML;
 
 // ============================================
 // CHARACTER COUNT AND CLEAR
@@ -201,10 +199,10 @@ async function analyzeMessage() {
 
     renderResults(data);
 
-    // Refresh history after a successful scan.
-    // A short delay allows the backend request to finish saving.
+    // Refresh history and analytics after a successful scan.
     window.setTimeout(() => {
       loadScanHistory({ quiet: true });
+      loadAnalytics({ quiet: true });
     }, 300);
   } catch (error) {
     console.error("ScamShield analysis error:", error);
@@ -352,9 +350,7 @@ function renderScanHistory() {
       scan.risk_level || "UNKNOWN"
     );
 
-    riskElement.classList.add(
-      getRiskClass(scan.risk_level)
-    );
+    riskElement.classList.add(getRiskClass(scan.risk_level));
 
     const scoreElement = makeElement(
       "span",
@@ -378,7 +374,7 @@ async function loadScanHistory(options = {}) {
 
   const quiet = options.quiet === true;
 
-  historyRefresh.disabled = true;
+  if (historyRefresh) historyRefresh.disabled = true;
 
   if (!quiet) {
     historyError.hidden = true;
@@ -421,7 +417,7 @@ async function loadScanHistory(options = {}) {
       historyEmpty.hidden = true;
     }
   } finally {
-    historyRefresh.disabled = false;
+    if (historyRefresh) historyRefresh.disabled = false;
   }
 }
 
@@ -429,6 +425,7 @@ async function loadScanHistory(options = {}) {
 if (historySearch && historyFilter && historyRefresh) {
   historySearch.addEventListener("input", renderScanHistory);
   historyFilter.addEventListener("change", renderScanHistory);
+
   historyRefresh.addEventListener("click", () => {
     loadScanHistory();
   });
@@ -441,7 +438,335 @@ if (historyClose && historyDetail) {
   });
 }
 
-// Load history when the page opens.
+// ============================================
+// DAY 50 — SCAN ANALYTICS DASHBOARD
+// ============================================
+
+const statsRefresh = document.getElementById("stats-refresh");
+const statsError = document.getElementById("stats-error");
+
+const statTotal = document.getElementById("stat-total");
+const statHigh = document.getElementById("stat-high");
+const statMedium = document.getElementById("stat-medium");
+const statLow = document.getElementById("stat-low");
+
+const riskDistribution = document.getElementById("risk-distribution");
+const activityChart = document.getElementById("activity-chart");
+
+const RISK_LEVELS = [
+  {
+    key: "HIGH",
+    label: "High risk",
+    className: "risk-high"
+  },
+  {
+    key: "MEDIUM",
+    label: "Medium risk",
+    className: "risk-medium"
+  },
+  {
+    key: "LOW",
+    label: "Low risk",
+    className: "risk-low"
+  },
+  {
+    key: "NO OBVIOUS INDICATORS",
+    label: "No obvious indicators",
+    className: "risk-safe"
+  }
+];
+
+function showStatsError(message) {
+  if (!statsError) return;
+
+  statsError.textContent = message;
+  statsError.hidden = false;
+}
+
+function clearStatsError() {
+  if (statsError) {
+    statsError.textContent = "";
+    statsError.hidden = true;
+  }
+}
+
+function formatNumber(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) && number >= 0
+    ? number.toLocaleString()
+    : "0";
+}
+
+function renderRiskDistribution(distribution, total) {
+  if (!riskDistribution) return;
+
+  riskDistribution.replaceChildren();
+
+  const normalized = {};
+
+  for (const level of RISK_LEVELS) {
+    const count = Number(distribution?.[level.key] ?? 0);
+
+    normalized[level.key] =
+      Number.isFinite(count) && count >= 0 ? count : 0;
+  }
+
+  const unknownCount = Object.entries(distribution || {})
+    .filter(([key]) => !RISK_LEVELS.some((level) => level.key === key))
+    .reduce((sum, [, value]) => {
+      const count = Number(value);
+      return sum + (Number.isFinite(count) && count > 0 ? count : 0);
+    }, 0);
+
+  const allLevels = [...RISK_LEVELS];
+
+  if (unknownCount > 0) {
+    allLevels.push({
+      key: "OTHER",
+      label: "Other risk levels",
+      className: ""
+    });
+    normalized.OTHER = unknownCount;
+  }
+
+  const chartTotal = allLevels.reduce(
+    (sum, level) => sum + normalized[level.key],
+    0
+  );
+
+  if (chartTotal === 0 || total === 0) {
+    riskDistribution.appendChild(
+      makeElement("p", "muted", "No scan data is available yet.")
+    );
+    return;
+  }
+
+  for (const level of allLevels) {
+    const count = normalized[level.key];
+    const percentage = (count / chartTotal) * 100;
+
+    const row = makeElement("div", "distribution-row");
+    const heading = makeElement("div", "distribution-heading");
+
+    const label = makeElement("span", "distribution-label", level.label);
+    const value = makeElement(
+      "span",
+      "distribution-value",
+      `${formatNumber(count)} · ${percentage.toFixed(1)}%`
+    );
+
+    heading.append(label, value);
+
+    const track = makeElement("div", "distribution-track");
+    track.setAttribute("role", "img");
+    track.setAttribute(
+      "aria-label",
+      `${level.label}: ${count} scans, ${percentage.toFixed(1)} percent`
+    );
+
+    const fill = makeElement("div", "distribution-fill");
+
+    if (level.className) {
+      fill.classList.add(level.className);
+    } else {
+      fill.classList.add("risk-other");
+    }
+
+    fill.style.width = `${percentage}%`;
+    track.appendChild(fill);
+
+    row.append(heading, track);
+    riskDistribution.appendChild(row);
+  }
+}
+
+function getLastSevenDays(activity) {
+  const counts = new Map();
+
+  for (const item of Array.isArray(activity) ? activity : []) {
+    if (!item || typeof item.date !== "string") continue;
+
+    const count = Number(item.count);
+
+    if (Number.isFinite(count) && count >= 0) {
+      counts.set(item.date, (counts.get(item.date) || 0) + count);
+    }
+  }
+
+  const days = [];
+  const today = new Date();
+
+  // Use UTC date keys to match the API's SQLite date() output.
+  const todayKey = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0")
+  ].join("-");
+
+  // Build calendar dates using local calendar components.
+  const base = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    12
+  );
+
+  for (let offset = 6; offset >= 0; offset--) {
+    const date = new Date(base);
+    date.setDate(base.getDate() - offset);
+
+    const key = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0")
+    ].join("-");
+
+    days.push({
+      date: key,
+      label: date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric"
+      }),
+      count: counts.get(key) || 0
+    });
+  }
+
+  return { days, todayKey };
+}
+
+function renderActivityChart(activity) {
+  if (!activityChart) return;
+
+  activityChart.replaceChildren();
+
+  const { days } = getLastSevenDays(activity);
+  const maxCount = Math.max(1, ...days.map((day) => day.count));
+
+  const chart = makeElement("div", "activity-bars");
+  chart.setAttribute("role", "group");
+  chart.setAttribute("aria-label", "Scans per day for the last seven days");
+
+  for (const day of days) {
+    const column = makeElement("div", "activity-column");
+
+    const count = makeElement(
+      "span",
+      "activity-count",
+      formatNumber(day.count)
+    );
+
+    const track = makeElement("div", "activity-bar-track");
+    const bar = makeElement("div", "activity-bar");
+
+    const height = day.count === 0
+      ? 0
+      : Math.max(5, (day.count / maxCount) * 100);
+
+    bar.style.height = `${height}%`;
+
+    track.setAttribute(
+      "aria-label",
+      `${day.label}: ${day.count} scans`
+    );
+
+    track.appendChild(bar);
+
+    const label = makeElement("span", "activity-label", day.label);
+
+    column.append(count, track, label);
+    chart.appendChild(column);
+  }
+
+  activityChart.appendChild(chart);
+
+  const totalRecent = days.reduce((sum, day) => sum + day.count, 0);
+
+  activityChart.appendChild(
+    makeElement(
+      "p",
+      "activity-summary",
+      `${formatNumber(totalRecent)} scans recorded across the displayed seven-day period.`
+    )
+  );
+}
+
+async function loadAnalytics(options = {}) {
+  if (!statTotal || !riskDistribution || !activityChart) return;
+
+  const quiet = options.quiet === true;
+
+  if (statsRefresh) statsRefresh.disabled = true;
+
+  if (!quiet) {
+    clearStatsError();
+  }
+
+  try {
+    const response = await fetch("/stats", {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Analytics request failed (HTTP ${response.status}).`
+      );
+    }
+
+    const data = await response.json();
+
+    if (
+      !data ||
+      !Number.isFinite(Number(data.total_scans)) ||
+      !data.risk_distribution ||
+      typeof data.risk_distribution !== "object" ||
+      Array.isArray(data.risk_distribution) ||
+      !Array.isArray(data.recent_activity)
+    ) {
+      throw new Error("The analytics API returned an unexpected response.");
+    }
+
+    const total = Math.max(0, Number(data.total_scans));
+    const high = Math.max(0, Number(data.risk_distribution.HIGH || 0));
+    const medium = Math.max(0, Number(data.risk_distribution.MEDIUM || 0));
+    const low = Math.max(0, Number(data.risk_distribution.LOW || 0));
+
+    statTotal.textContent = formatNumber(total);
+    statHigh.textContent = formatNumber(high);
+    statMedium.textContent = formatNumber(medium);
+    statLow.textContent = formatNumber(low);
+
+    renderRiskDistribution(data.risk_distribution, total);
+    renderActivityChart(data.recent_activity);
+
+    clearStatsError();
+  } catch (error) {
+    console.error("ScamShield analytics error:", error);
+
+    if (!quiet) {
+      showStatsError(
+        `${error.message || "Could not load analytics."} Check that the backend is running.`
+      );
+    }
+  } finally {
+    if (statsRefresh) statsRefresh.disabled = false;
+  }
+}
+
+// Refresh analytics when requested.
+if (statsRefresh) {
+  statsRefresh.addEventListener("click", () => {
+    loadAnalytics();
+  });
+}
+
+// Load both dashboards when the page opens.
 if (historyList) {
   loadScanHistory();
+}
+
+if (statTotal) {
+  loadAnalytics();
 }

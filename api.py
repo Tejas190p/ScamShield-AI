@@ -233,3 +233,77 @@ def scan_history(limit: int = 20):
             status_code=500,
             detail="Could not retrieve scan history",
         )
+
+
+
+
+# ==========================================
+# SCAN ANALYTICS
+# ==========================================
+
+@app.get("/stats")
+def scan_stats():
+    try:
+        with sqlite3.connect(DATABASE_NAME) as connection:
+            connection.row_factory = sqlite3.Row
+
+            # Overall scan totals and high-risk scans
+            totals = connection.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_scans,
+                    COALESCE(
+                        SUM(CASE WHEN risk_level = 'HIGH' THEN 1 ELSE 0 END),
+                        0
+                    ) AS high_risk_scans
+                FROM scans
+                """
+            ).fetchone()
+
+            # Distribution across all risk levels
+            distribution_rows = connection.execute(
+                """
+                SELECT risk_level, COUNT(*) AS count
+                FROM scans
+                GROUP BY risk_level
+                """
+            ).fetchall()
+
+            # Scan activity for the most recent seven days
+            activity_rows = connection.execute(
+                """
+                SELECT
+                    date(scanned_at) AS scan_date,
+                    COUNT(*) AS count
+                FROM scans
+                WHERE datetime(scanned_at) >= datetime('now', '-6 days')
+                GROUP BY date(scanned_at)
+                ORDER BY scan_date ASC
+                """
+            ).fetchall()
+
+        risk_distribution = {
+            row["risk_level"]: row["count"]
+            for row in distribution_rows
+        }
+
+        recent_activity = [
+            {
+                "date": row["scan_date"],
+                "count": row["count"],
+            }
+            for row in activity_rows
+        ]
+
+        return {
+            "total_scans": totals["total_scans"],
+            "high_risk_scans": totals["high_risk_scans"],
+            "risk_distribution": risk_distribution,
+            "recent_activity": recent_activity,
+        }
+
+    except sqlite3.Error:
+        raise HTTPException(
+            status_code=500,
+            detail="Could not retrieve scan analytics",
+        )    

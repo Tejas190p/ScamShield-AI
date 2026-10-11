@@ -120,12 +120,107 @@
       </p>
     </section>
 
+    <!-- Day 50: Scan Analytics Dashboard -->
+    <section
+      id="analytics-dashboard"
+      class="analytics-dashboard panel"
+      aria-labelledby="analytics-title"
+    >
+      <div class="section-heading">
+        <div>
+          <span class="step-label">SECURITY OVERVIEW</span>
+          <h2 id="analytics-title">Scan Analytics</h2>
+          <p class="history-subtitle">
+            Understand your scan activity and detected risk patterns.
+          </p>
+        </div>
+
+        <button
+          id="stats-refresh"
+          class="text-button"
+          type="button"
+        >
+          ↻ Refresh analytics
+        </button>
+      </div>
+
+      <p id="stats-error" class="error" role="alert" hidden></p>
+
+      <!-- Summary cards -->
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="muted">TOTAL SCANS</span>
+          <strong id="stat-total">—</strong>
+          <span class="stat-caption">All saved analyses</span>
+        </article>
+
+        <article class="stat-card">
+          <span class="muted">HIGH-RISK SCANS</span>
+          <strong id="stat-high">—</strong>
+          <span class="stat-caption">Flagged as high risk</span>
+        </article>
+
+        <article class="stat-card">
+          <span class="muted">MEDIUM-RISK SCANS</span>
+          <strong id="stat-medium">—</strong>
+          <span class="stat-caption">Require extra caution</span>
+        </article>
+
+        <article class="stat-card">
+          <span class="muted">LOW-RISK SCANS</span>
+          <strong id="stat-low">—</strong>
+          <span class="stat-caption">Fewer indicators detected</span>
+        </article>
+      </div>
+
+      <!-- Risk distribution -->
+      <div class="analytics-section">
+        <h3>Risk distribution</h3>
+        <p class="history-subtitle">
+          Breakdown of all saved scans by their assigned risk level.
+        </p>
+
+        <div
+          id="risk-distribution"
+          class="risk-distribution"
+          aria-live="polite"
+        >
+          <p class="muted">Loading analytics...</p>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="analytics-section">
+        <h3>Recent scan activity</h3>
+        <p class="history-subtitle">
+          Daily totals for the last seven days.
+        </p>
+
+        <div
+          id="activity-chart"
+          class="activity-chart"
+          aria-live="polite"
+        >
+          <p class="muted">Loading activity...</p>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Risk levels are automated assessments, not proof of fraud or a
+        guarantee that a message is safe.
+      </p>
+    </section>
+
     <!-- Day 49: Scan History Dashboard -->
-    <section id="history-dashboard" class="history-dashboard panel">
+    <section
+      id="history-dashboard"
+      class="history-dashboard panel"
+      aria-labelledby="history-title"
+    >
       <div class="section-heading">
         <div>
           <span class="step-label">YOUR ACTIVITY</span>
-          <h2>Scan History</h2>
+          <h2 id="history-title">Scan History</h2>
           <p class="history-subtitle">
             Review your previous message analyses.
           </p>

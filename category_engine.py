@@ -1,3 +1,4 @@
+
 def detect_category(message: str, analysis: dict) -> str:
     """
     Detect the most likely scam category using
@@ -9,24 +10,35 @@ def detect_category(message: str, analysis: dict) -> str:
 
     text = message.lower()
 
-    # Bank / financial scams
+    # ========================================================
+    # BANK / FINANCIAL
+    # ========================================================
+
     bank_words = [
         "bank",
         "account",
         "otp",
         "cvv",
+        "pin",
         "debit card",
         "credit card",
         "upi",
         "kyc",
         "transaction",
         "payment",
+        "bank details",
+        "account number",
+        "atm",
+        "net banking",
     ]
 
     if any(word in text for word in bank_words):
         return "Financial / Bank"
 
-    # Job / internship scams
+    # ========================================================
+    # JOB / INTERNSHIP SCAMS
+    # ========================================================
+
     job_words = [
         "job offer",
         "job opportunity",
@@ -42,7 +54,10 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in job_words):
         return "Job / Internship"
 
-    # Prize / reward scams
+    # ========================================================
+    # PRIZE / REWARD SCAMS
+    # ========================================================
+
     reward_words = [
         "congratulations",
         "you won",
@@ -58,7 +73,10 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in reward_words):
         return "Prize / Reward"
 
-    # Account takeover / verification scams
+    # ========================================================
+    # ACCOUNT / VERIFICATION
+    # ========================================================
+
     account_words = [
         "verify your account",
         "account verification",
@@ -67,12 +85,19 @@ def detect_category(message: str, analysis: dict) -> str:
         "login verification",
         "security verification",
         "password reset",
+        "password",
+        "login credentials",
+        "sign in",
+        "sign-in",
     ]
 
     if any(word in text for word in account_words):
         return "Account / Verification"
 
-    # Delivery scams
+    # ========================================================
+    # DELIVERY / PARCEL
+    # ========================================================
+
     delivery_words = [
         "delivery",
         "parcel",
@@ -86,7 +111,10 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in delivery_words):
         return "Delivery / Parcel"
 
-    # Impersonation
+    # ========================================================
+    # IMPERSONATION
+    # ========================================================
+
     impersonation_words = [
         "bank officer",
         "police officer",
@@ -100,8 +128,12 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in impersonation_words):
         return "Impersonation"
 
-    # URL-based phishing
+    # ========================================================
+    # URL-BASED PHISHING
+    # ========================================================
+
     if analysis.get("urls"):
         return "Phishing / Suspicious Link"
 
     return "General / Unknown"
+

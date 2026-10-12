@@ -1,13 +1,15 @@
+
+from sensitive_detection import is_sensitive_request
+
+
 def detect_category_signals(message: str, category: str) -> list:
     """
     Detect category-specific warning signals.
 
-    These signals strengthen the rule-based assessment.
-    They are warning indicators, not proof of fraud.
+    These signals are warning indicators, not proof of fraud.
     """
 
     text = message.lower()
-
     signals = []
 
     # ========================================================
@@ -16,19 +18,19 @@ def detect_category_signals(message: str, category: str) -> list:
 
     if category == "Financial / Bank":
 
-        if "otp" in text:
+        if is_sensitive_request(text, "otp"):
             signals.append({
                 "reason": "Request for an OTP",
                 "points": 3,
             })
 
-        if "cvv" in text:
+        if is_sensitive_request(text, "cvv"):
             signals.append({
                 "reason": "Request for a CVV",
                 "points": 3,
             })
 
-        if "pin" in text:
+        if is_sensitive_request(text, "pin"):
             signals.append({
                 "reason": "Request for a PIN",
                 "points": 3,
@@ -40,7 +42,10 @@ def detect_category_signals(message: str, category: str) -> list:
                 "points": 2,
             })
 
-        if "account suspended" in text or "account will be suspended" in text:
+        if (
+            "account suspended" in text
+            or "account will be suspended" in text
+        ):
             signals.append({
                 "reason": "Account suspension threat",
                 "points": 3,
@@ -76,16 +81,19 @@ def detect_category_signals(message: str, category: str) -> list:
                 "points": 3,
             })
 
-        if "guaranteed job" in text or "guaranteed employment" in text:
+        if (
+            "guaranteed job" in text
+            or "guaranteed employment" in text
+        ):
             signals.append({
                 "reason": "Guaranteed employment claim",
                 "points": 2,
             })
 
         if "selected" in text and (
-            "job" in text or
-            "position" in text or
-            "work from home" in text
+            "job" in text
+            or "position" in text
+            or "work from home" in text
         ):
             signals.append({
                 "reason": "Job selection without clear hiring context",
@@ -225,3 +233,4 @@ def detect_category_signals(message: str, category: str) -> list:
             })
 
     return signals
+

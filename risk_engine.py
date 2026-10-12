@@ -1,5 +1,3 @@
-from category_signals import detect_category_signals
-
 
 def merge_risk_signals(
     base_score: int,
@@ -7,10 +5,8 @@ def merge_risk_signals(
     category_signals: list,
 ) -> tuple:
     """
-    Merge base detection signals with category-specific signals.
-
-    Category signals that represent the same evidence already detected
-    by the base engine are not counted twice.
+    Merge base and category-specific risk signals.
+    Avoid counting the same evidence twice.
     """
 
     reasons = list(base_reasons)
@@ -21,30 +17,24 @@ def merge_risk_signals(
         for reason in base_reasons
     }
 
-    for signal in category_signals:
+    has_sensitive_info = any(
+        "request for sensitive personal information" in reason
+        for reason in existing_reasons
+    )
 
+    for signal in category_signals:
         signal_reason = signal["reason"]
         signal_key = signal_reason.lower()
 
-        # Avoid duplicate evidence
+        # Skip signals already represented by base evidence.
         duplicate = False
 
-        if "otp" in signal_key:
-            duplicate = any(
-                "sensitive personal information" in reason
-                for reason in existing_reasons
-            )
-
-        elif "cvv" in signal_key:
-            duplicate = any(
-                "sensitive personal information" in reason
-                for reason in existing_reasons
-            )
+        if any(term in signal_key for term in ("otp", "cvv", "pin")):
+            duplicate = has_sensitive_info
 
         elif "account suspension" in signal_key:
             duplicate = any(
-                "threat" in reason or
-                "suspension" in reason
+                "threat" in reason or "suspension" in reason
                 for reason in existing_reasons
             )
 
@@ -52,28 +42,22 @@ def merge_risk_signals(
             continue
 
         score += signal["points"]
-
         reasons.append({
             "reason": signal_reason,
             "points": signal["points"],
         })
-
         existing_reasons.add(signal_key)
 
     return score, reasons
 
 
 def get_risk_level(score: int) -> str:
-    """
-    Convert the final risk score into a risk level.
-    """
+    """Convert the final risk score into a risk level."""
 
     if score >= 7:
         return "HIGH"
-
     if score >= 4:
         return "MEDIUM"
-
     if score >= 1:
         return "LOW"
 

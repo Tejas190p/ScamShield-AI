@@ -1,6 +1,9 @@
+
 import re
 import ipaddress
 from urllib.parse import urlparse
+
+from sensitive_detection import is_sensitive_request
 
 
 URGENT_WORDS = [
@@ -108,15 +111,14 @@ URL_PATTERN = r"https?://[^\s<>]+|www\.[^\s<>]+"
 
 
 def analyze_url(url: str) -> dict:
-    """
-    Analyze a URL for suspicious characteristics.
-    """
+    """Analyze a URL for suspicious characteristics."""
 
     findings = []
-
     clean_url = url.rstrip(".,!?;:)]}")
+
     parsed = urlparse(
-        clean_url if clean_url.startswith(("http://", "https://"))
+        clean_url
+        if clean_url.lower().startswith(("http://", "https://"))
         else "http://" + clean_url
     )
 
@@ -125,12 +127,10 @@ def analyze_url(url: str) -> dict:
     # Direct IP address
     try:
         ipaddress.ip_address(hostname)
-
         findings.append({
             "message": "URL uses a direct IP address",
             "points": 2,
         })
-
     except ValueError:
         pass
 
@@ -155,10 +155,12 @@ def analyze_url(url: str) -> dict:
             "points": 1,
         })
 
-    # Username/password inside URL
+    # Username/password embedded in URL
     if parsed.username or parsed.password:
         findings.append({
-            "message": "URL contains embedded username or password information",
+            "message": (
+                "URL contains embedded username or password information"
+            ),
             "points": 2,
         })
 
@@ -192,9 +194,7 @@ def analyze_url(url: str) -> dict:
 
 
 def analyze_message(message: str) -> dict:
-    """
-    Analyze a message for common scam warning patterns.
-    """
+    """Analyze a message for common scam warning patterns."""
 
     text = message.lower()
 
@@ -225,8 +225,9 @@ def analyze_message(message: str) -> dict:
         if word in text:
             categories["threat"].append(word)
 
+    # Only match sensitive terms when the message appears to request them.
     for word in PERSONAL_INFO_WORDS:
-        if word in text:
+        if word in text and is_sensitive_request(text, word):
             categories["personal_info"].append(word)
 
     for word in CONTACT_WORDS:
@@ -256,12 +257,9 @@ def analyze_message(message: str) -> dict:
 
 
 def calculate_risk(result: dict) -> tuple:
-    """
-    Calculate the base rule-based risk score.
-    """
+    """Calculate the base rule-based risk score."""
 
     categories = result["categories"]
-
     score = 0
     reasons = []
 
@@ -297,7 +295,7 @@ def calculate_risk(result: dict) -> tuple:
             "points": 3,
         })
 
-    # Personal information
+    # Sensitive information request
     if categories["personal_info"]:
         score += 3
         reasons.append({
@@ -331,11 +329,8 @@ def calculate_risk(result: dict) -> tuple:
 
     # URL analysis
     for url_result in result["url_results"]:
-
         for finding in url_result["findings"]:
-
             score += finding["points"]
-
             reasons.append({
                 "reason": finding["message"],
                 "points": finding["points"],
@@ -344,14 +339,13 @@ def calculate_risk(result: dict) -> tuple:
     # Risk level
     if score >= 7:
         level = "HIGH"
-
     elif score >= 4:
         level = "MEDIUM"
-
     elif score >= 1:
         level = "LOW"
-
     else:
         level = "NO OBVIOUS INDICATORS"
 
     return score, level, reasons
+
+

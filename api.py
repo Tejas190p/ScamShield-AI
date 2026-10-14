@@ -1,4 +1,5 @@
 
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
@@ -88,7 +89,7 @@ class ScanResponse(BaseModel):
 @app.get("/health")
 def health():
     try:
-        with sqlite3.connect(DATABASE_NAME) as connection:
+        with closing(sqlite3.connect(DATABASE_NAME)) as connection:
             connection.execute("SELECT 1")
 
         return {
@@ -156,20 +157,21 @@ def scan_message(request: ScanRequest):
 
     # 7. SAVE SCAN TO SQLITE
     try:
-        with sqlite3.connect(DATABASE_NAME) as connection:
-            connection.execute(
-                """
-                INSERT INTO scans
-                    (scanned_at, message, risk_level, risk_score)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    datetime.now(timezone.utc).isoformat(),
-                    message,
-                    level,
-                    score,
-                ),
-            )
+        with closing(sqlite3.connect(DATABASE_NAME)) as connection:
+            with connection:
+                connection.execute(
+                    """
+                    INSERT INTO scans
+                        (scanned_at, message, risk_level, risk_score)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        datetime.now(timezone.utc).isoformat(),
+                        message,
+                        level,
+                        score,
+                    ),
+                )
 
     except sqlite3.Error:
         raise HTTPException(
@@ -205,7 +207,7 @@ def scan_history(limit: int = 20):
         )
 
     try:
-        with sqlite3.connect(DATABASE_NAME) as connection:
+        with closing(sqlite3.connect(DATABASE_NAME)) as connection:
             connection.row_factory = sqlite3.Row
 
             rows = connection.execute(
@@ -235,8 +237,6 @@ def scan_history(limit: int = 20):
         )
 
 
-
-
 # ==========================================
 # SCAN ANALYTICS
 # ==========================================
@@ -244,7 +244,7 @@ def scan_history(limit: int = 20):
 @app.get("/stats")
 def scan_stats():
     try:
-        with sqlite3.connect(DATABASE_NAME) as connection:
+        with closing(sqlite3.connect(DATABASE_NAME)) as connection:
             connection.row_factory = sqlite3.Row
 
             # Overall scan totals and high-risk scans
@@ -253,7 +253,12 @@ def scan_stats():
                 SELECT
                     COUNT(*) AS total_scans,
                     COALESCE(
-                        SUM(CASE WHEN risk_level = 'HIGH' THEN 1 ELSE 0 END),
+                        SUM(
+                            CASE
+                                WHEN risk_level = 'HIGH' THEN 1
+                                ELSE 0
+                            END
+                        ),
                         0
                     ) AS high_risk_scans
                 FROM scans
@@ -306,4 +311,4 @@ def scan_stats():
         raise HTTPException(
             status_code=500,
             detail="Could not retrieve scan analytics",
-        )    
+        )

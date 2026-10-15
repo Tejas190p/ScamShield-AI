@@ -1,5 +1,6 @@
 
 import unittest
+from category_signals import detect_category_signals
 
 from sensitive_detection import is_sensitive_request
 from risk_engine import merge_risk_signals, get_risk_level
@@ -109,5 +110,50 @@ class TestRiskEngine(unittest.TestCase):
                 self.assertEqual(get_risk_level(score), expected)
 
 
+
+
+class TestDeliverySignals(unittest.TestCase):
+
+    def test_delivery_fee_message_reports_fee_signal(self):
+        signals = detect_category_signals(
+            "Your parcel delivery has failed. "
+            "Pay the delivery fee to reschedule.",
+            "Delivery / Parcel",
+        )
+        reasons = [signal["reason"] for signal in signals]
+        self.assertIn("Delivery fee request", reasons)
+
+    def test_ordinary_delivery_update_has_no_fee_signal(self):
+        signals = detect_category_signals(
+            "Your package will arrive tomorrow.",
+            "Delivery / Parcel",
+        )
+        reasons = [signal["reason"] for signal in signals]
+        self.assertNotIn("Delivery fee request", reasons)
+        self.assertNotIn("Customs fee request", reasons)
+
+
+class TestDuplicateDeliveryFeeScoring(unittest.TestCase):
+
+    def test_delivery_fee_is_not_counted_twice(self):
+        from risk_engine import merge_risk_signals
+
+        base_reasons = [{
+            "reason": "Money or payment-related language",
+            "points": 2,
+        }]
+        category_signals = [{
+            "reason": "Delivery fee request",
+            "points": 2,
+        }]
+
+        score, reasons = merge_risk_signals(
+            base_score=2,
+            base_reasons=base_reasons,
+            category_signals=category_signals,
+        )
+
+        self.assertEqual(score, 2)
+        self.assertEqual(len(reasons), 1)
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -72,7 +72,6 @@ CONTACT_WORDS = [
 ]
 
 BANK_IMPERSONATION_WORDS = [
-    "bank",
     "bank officer",
     "customer support",
     "official representative",

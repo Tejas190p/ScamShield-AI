@@ -38,6 +38,12 @@ def merge_risk_signals(
                 for reason in existing_reasons
             )
 
+        elif "delivery fee request" in signal_key:
+            duplicate = any(
+                "money or payment-related language" in reason
+                for reason in existing_reasons
+            )
+
         if duplicate:
             continue
 

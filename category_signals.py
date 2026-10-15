@@ -160,12 +160,6 @@ def detect_category_signals(message: str, category: str) -> list:
                 "points": 2,
             })
 
-        if "tracking number" not in text and "tracking id" not in text:
-            signals.append({
-                "reason": "No tracking information provided",
-                "points": 1,
-            })
-
         if "customs fee" in text:
             signals.append({
                 "reason": "Customs fee request",

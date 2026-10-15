@@ -32,6 +32,14 @@ class TestCategoryPriority(unittest.TestCase):
             "Account / Verification",
         )
 
+
+    def test_bank_otp_request_is_account_verification(self):
+        message = "Your bank account needs verification. Send your OTP now."
+        self.assertEqual(
+            detect_category(message, {}),
+            "Account / Verification",
+        )
+
     def test_url_falls_back_to_phishing_category(self):
         message = "Please visit this link."
         self.assertEqual(

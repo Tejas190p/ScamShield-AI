@@ -21,6 +21,7 @@
     ]
     account_words = [
         "verify your account", "account verification",
+        "account needs verification",
         "account suspended", "account will be suspended",
         "account blocked", "login verification", "security verification",
         "password reset", "password", "login credentials",

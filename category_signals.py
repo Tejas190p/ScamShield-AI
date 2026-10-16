@@ -18,6 +18,16 @@ def detect_category_signals(message: str, category: str) -> list:
 
     if category == "Financial / Bank":
 
+        if (
+            "refund" in text
+            and "processing fee" in text
+            and ("pay" in text or "fee" in text)
+        ):
+            signals.append({
+                "reason": "Processing fee demanded for a refund",
+                "points": 3,
+            })
+
         if is_sensitive_request(text, "otp"):
             signals.append({
                 "reason": "Request for an OTP",

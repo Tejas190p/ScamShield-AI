@@ -249,6 +249,7 @@ def analyze_message(message: str) -> dict:
     ]
 
     return {
+        "message": message,
         "categories": categories,
         "urls": urls,
         "url_results": url_results,
@@ -270,11 +271,27 @@ def calculate_risk(result: dict) -> tuple:
             "points": 2,
         })
 
-    # Money
-    if categories["money"]:
+    # Money: ordinary payment mentions are not risk indicators by themselves.
+    money_context_words = (
+        "pay a fee",
+        "processing fee",
+        "registration fee",
+        "registration fees",
+        "security deposit",
+        "joining fee",
+        "training fee",
+        "send money",
+        "transfer money",
+        "pay immediately",
+        "pay now",
+        "payment required",
+        "claim fee",
+    )
+    if any(phrase in result.get("message", "").lower()
+           for phrase in money_context_words):
         score += 2
         reasons.append({
-            "reason": "Money or payment-related language",
+            "reason": "Potential payment demand",
             "points": 2,
         })
 

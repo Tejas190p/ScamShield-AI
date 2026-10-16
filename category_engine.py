@@ -1,4 +1,4 @@
-﻿def detect_category(message: str, analysis: dict) -> str:
+def detect_category(message: str, analysis: dict) -> str:
     """
     Classify a message using its strongest contextual indicators.
     A category is a clue, not proof of fraud.
@@ -36,6 +36,7 @@
         "bank", "account", "otp", "cvv", "pin", "debit card",
         "credit card", "upi", "kyc", "transaction", "payment",
         "bank details", "account number", "atm", "net banking",
+        "refund", "reimbursement",
     ]
 
     if any(word in text for word in reward_words):
@@ -43,6 +44,10 @@
 
     if any(word in text for word in job_words):
         return "Job / Internship"
+
+    # Sensitive card-verification requests need specific classification.
+    if any(word in text for word in ["cvv", "security code"]):
+        return "Account / Verification"
 
     if any(word in text for word in account_words):
         return "Account / Verification"

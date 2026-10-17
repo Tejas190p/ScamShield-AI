@@ -39,6 +39,16 @@ def detect_category(message: str, analysis: dict) -> str:
         "refund", "reimbursement",
     ]
 
+    # Prioritize job-related fee requests over generic congratulations.
+    job_fee_terms = (
+        "registration fee", "registration fees", "security deposit",
+        "training fee", "processing fee", "joining fee",
+    )
+    has_job_context = any(word in text for word in job_words) or (
+        "job selection" in text or "job selected" in text
+    )
+    if has_job_context and any(term in text for term in job_fee_terms):
+        return "Job / Internship"
     if any(word in text for word in reward_words):
         return "Prize / Reward"
 
@@ -61,7 +71,8 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in bank_words):
         return "Financial / Bank"
 
-    if analysis.get("urls"):
-        return "Phishing / Suspicious Link"
+    # A URL alone is not evidence of phishing.
+    return "General / Unknown"
 
     return "General / Unknown"
+

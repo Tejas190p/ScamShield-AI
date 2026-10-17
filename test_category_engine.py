@@ -1,4 +1,4 @@
-﻿import unittest
+import unittest
 from category_engine import detect_category
 
 
@@ -40,13 +40,23 @@ class TestCategoryPriority(unittest.TestCase):
             "Account / Verification",
         )
 
-    def test_url_falls_back_to_phishing_category(self):
-        message = "Please visit this link."
+    def test_congratulations_job_fee_is_classified_as_job(self):
+        message = (
+            "Congratulations on your job selection. "
+            "Pay a registration fee to begin."
+        )
+        self.assertEqual(
+            detect_category(message, {}),
+            "Job / Internship",
+        )
+    def test_url_alone_does_not_prove_phishing(self):
+        message = "Please visit this link: https://example.com"
         self.assertEqual(
             detect_category(message, {"urls": ["https://example.com"]}),
-            "Phishing / Suspicious Link",
+            "General / Unknown",
         )
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

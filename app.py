@@ -24,7 +24,7 @@ MONEY_WORDS = [
     "fee",
     "cash",
     "amount",
-    "₹",
+    "â‚¹",
     "rs",
     "inr",
 ]
@@ -263,11 +263,34 @@ def calculate_risk(result: dict) -> tuple:
     score = 0
     reasons = []
 
-    # Urgency
-    if categories["urgent"]:
+    # Urgency counts only when paired with a risky context.
+    message_text = result.get("message", "").lower()
+    has_urgency = bool(categories.get("urgent"))
+    has_threat_context = bool(categories.get("threat"))
+    has_sensitive_context = bool(categories.get("personal_info"))
+
+    payment_phrases = (
+        "pay now",
+        "pay immediately",
+        "payment required",
+        "send money",
+        "transfer money",
+        "registration fee",
+        "processing fee",
+        "joining fee",
+        "training fee",
+        "security deposit",
+    )
+    has_payment_demand = any(
+        phrase in message_text for phrase in payment_phrases
+    )
+
+    if has_urgency and (
+        has_threat_context or has_payment_demand or has_sensitive_context
+    ):
         score += 2
         reasons.append({
-            "reason": "Urgent or pressure-based language",
+            "reason": "Urgency combined with a threat, payment demand, or sensitive-information request",
             "points": 2,
         })
 
@@ -363,5 +386,7 @@ def calculate_risk(result: dict) -> tuple:
         level = "NO OBVIOUS INDICATORS"
 
     return score, level, reasons
+
+
 
 

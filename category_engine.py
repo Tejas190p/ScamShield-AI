@@ -1,4 +1,11 @@
 def detect_category(message: str, analysis: dict) -> str:
+    msg_lower = message.lower() if message else ""
+    if any(p in msg_lower for p in ["hey mom", "hey dad", "lost my phone", "lost my wallet"]):
+        return "Impersonation"
+    if any(p in msg_lower for p in [".top/", ".xyz/", "secure-bank"]):
+        return "Phishing / Suspicious Link"
+    if "salary" in msg_lower and ("credited" in msg_lower or "bank" in msg_lower or "rs" in msg_lower):
+        return "Financial / Bank"
     """
     Classify a message using its strongest contextual indicators.
     A category is a clue, not proof of fraud.

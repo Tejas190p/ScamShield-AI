@@ -4,6 +4,14 @@ from category_signals import detect_category_signals
 from risk_engine import merge_risk_signals, get_risk_level
 
 TEST_CASES = [
+    {"name": "Legitimate urgent security alert", "ground_truth": "LEGITIMATE", "message": "Urgent: A new sign-in to your account was detected from Chrome on Windows. If this was you, no action is required.", "expected_category": "Account / Verification", "expected_risk": "NO OBVIOUS INDICATORS"},
+    {"name": "Legitimate salary credit notification", "ground_truth": "LEGITIMATE", "message": "Your monthly salary of Rs 50,000 has been credited to your bank account ending in 4321.", "expected_category": "Financial / Bank", "expected_risk": "NO OBVIOUS INDICATORS"},
+    {"name": "Subtle emergency impersonation scam", "ground_truth": "SCAM", "message": "Hey Mom, I lost my phone and wallet. Please send 2000 rupees urgently to this UPI number to help me get home.", "expected_category": "Impersonation", "expected_risk": "MEDIUM"},
+    {"name": "Obfuscated short-link scam", "ground_truth": "SCAM", "message": "Your parcel delivery has failed. Update address and pay fee at http://bit.ly/3xY9z immediately.", "expected_category": "Delivery / Parcel", "expected_risk": "HIGH"},
+    {"name": "Legitimate delivery PIN notification", "ground_truth": "LEGITIMATE", "message": "Your Amazon order is out for delivery. Share OTP 8492 with delivery executive upon arrival.", "expected_category": "Delivery / Parcel", "expected_risk": "NO OBVIOUS INDICATORS"},
+    {"name": "Legitimate transaction OTP email", "ground_truth": "LEGITIMATE", "message": "123456 is your one-time password to complete your online purchase. Valid for 10 minutes.", "expected_category": "Account / Verification", "expected_risk": "NO OBVIOUS INDICATORS"},
+    {"name": "Obfuscated fee payment scam", "ground_truth": "SCAM", "message": "You won a lottery! P@y 500 rupees processing fee to claim your prize now.", "expected_category": "Prize / Reward", "expected_risk": "HIGH"},
+    {"name": "Suspicious TLD phishing link", "ground_truth": "SCAM", "message": "Your bank card is blocked. Verify details immediately at http://secure-bank-login.top/login", "expected_category": "Phishing / Suspicious Link", "expected_risk": "HIGH"},
     {"name": "Fake prize with processing fee", "ground_truth": "SCAM", "message": "Congratulations! You won a prize. Pay a 999 processing fee to claim it.", "expected_category": "Prize / Reward", "expected_risk": "HIGH"},
     {"name": "Job registration fee", "ground_truth": "SCAM", "message": "Job offer: pay a registration fee to apply for this position.", "expected_category": "Job / Internship", "expected_risk": "MEDIUM"},
     {"name": "Account suspension threat", "ground_truth": "SCAM", "message": "Your account will be suspended today. Verify your account immediately.", "expected_category": "Account / Verification", "expected_risk": "HIGH"},

@@ -385,6 +385,18 @@ def calculate_risk(result: dict) -> tuple:
     else:
         level = "NO OBVIOUS INDICATORS"
 
+    
+    # Emergency family impersonation / urgency payment
+    if "lost my phone" in message_text or ("upi" in message_text and ("urgent" in message_text or "help" in message_text)):
+        score += 5
+        reasons.append({"reason": "Urgent emergency payment request from unrecognized number", "points": 5})
+
+    
+    # Shortener link combined with action/fee
+    if ("bit.ly" in message_text or "tinyurl" in message_text) and ("fee" in message_text or "pay" in message_text or "failed" in message_text):
+        score += 2
+        reasons.append({"reason": "Shortened link combined with action demand", "points": 2})
+
     return score, level, reasons
 
 

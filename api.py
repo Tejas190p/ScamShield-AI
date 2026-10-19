@@ -312,3 +312,54 @@ def scan_stats():
             status_code=500,
             detail="Could not retrieve scan analytics",
         )
+
+
+@app.get('/metrics')
+def get_evaluation_metrics():
+    import json
+    dataset_path = Path(__file__).parent / 'eval_dataset.json'
+    if not dataset_path.exists():
+        return {'error': 'Evaluation dataset not found'}
+        
+    with open(dataset_path, 'r', encoding='utf-8') as f:
+        cases = json.load(f)
+        
+    tp = fp = fn = tn = 0
+    from app import analyze_message, calculate_risk
+    from category_engine import detect_category
+    from category_signals import detect_category_signals
+    from risk_engine import merge_risk_signals, get_risk_level
+
+    for case in cases:
+        analysis = analyze_message(case['message'])
+        actual_category = detect_category(case['message'], analysis)
+        score, _, reasons = calculate_risk(analysis)
+        category_signals = detect_category_signals(case['message'], actual_category)
+        score, reasons = merge_risk_signals(score, reasons, category_signals)
+        actual_risk = get_risk_level(score)
+
+        actual_scam = case.get('ground_truth') == 'SCAM'
+        predicted_scam = actual_risk in ('HIGH', 'MEDIUM')
+
+        if predicted_scam and actual_scam:
+            tp += 1
+        elif predicted_scam and not actual_scam:
+            fp += 1
+        elif not predicted_scam and actual_scam:
+            fn += 1
+        else:
+            tn += 1
+
+    precision = tp / (tp + fp) if (tp + fp) else 0.0
+    recall = tp / (tp + fn) if (tp + fn) else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+
+    return {
+        'confusion_matrix': {'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn},
+        'metrics': {
+            'precision': round(precision * 100, 2),
+            'recall': round(recall * 100, 2),
+            'f1_score': round(f1 * 100, 2)
+        },
+        'total_test_cases': len(cases)
+    }

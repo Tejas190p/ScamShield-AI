@@ -192,3 +192,12 @@ class TestScamShieldAPI(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+    def test_metrics_endpoint_returns_evaluation_summary(self):
+        response = self.client.get('/metrics')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('confusion_matrix', data)
+        self.assertIn('metrics', data)
+        self.assertIn('total_test_cases', data)
+        self.assertEqual(data['metrics']['precision'], 100.0)

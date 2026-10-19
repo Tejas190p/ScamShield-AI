@@ -166,5 +166,187 @@
         "message": "Work from home and earn a salary. Pay an upfront registration fee to get started.",
         "expected_category": "Job / Internship",
         "expected_risk": "MEDIUM"
+    },
+    {
+        "name": "Crypto recovery scam offer",
+        "message": "URGENT: We detected 1.45 BTC in your inactive account. Pay 0.005 BTC network clearance fee at http://recovery-wallet-clearance.top to release funds.",
+        "expected_category": "Prize / Reward",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Electricity disconnection threat",
+        "message": "Electricity Board: Your power bill is unpaid. Power will be disconnected tonight at 9:00 PM. Pay Rs 1,240 immediately via http://electricity-update-bill.online",
+        "expected_category": "Account / Verification",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Fake KYC update freeze",
+        "message": "Dear customer, your bank account is locked due to missing KYC documents. Update now at http://secure-kyc-banking-portal.info or your account will be permanently blocked.",
+        "expected_category": "Account / Verification",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Tech support Trojan popup scam",
+        "message": "CRITICAL SECURITY ALERT: Microsoft detected Zeus Trojan infection on your device. Call technical support immediately at +1-800-555-0199 to prevent data deletion.",
+        "expected_category": "Impersonation",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate electricity bill receipt",
+        "message": "Thank you for paying your electricity bill of Rs 1,450. Transaction ID: TXN987654321. Status: SUCCESS.",
+        "expected_category": "Financial / Bank",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake e-commerce delivery fee",
+        "message": "Amazon Alert: Package #IN-8890 cannot be delivered due to address mismatch. Pay Rs 25 redelivery fee at http://amazon-redelivery-address.xyz",
+        "expected_category": "Delivery / Parcel",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate airline flight confirmation",
+        "message": "Booking Confirmed: Flight AI-803 from Delhi to Mumbai on Oct 24. PNR: ABC123D. Gate details will be sent 2 hours before departure.",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Pre-approved loan fee scam",
+        "message": "Congratulations! Your personal loan of Rs 5,00,000 is approved at 2% interest. Deposit Rs 1,500 file processing fee to claim approval.",
+        "expected_category": "Financial / Bank",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate calendar invite",
+        "message": "Invitation: ScamShield AI Sprint Planning @ Tue Oct 20, 2026 10am - 11am (IST). Organizer: tejas@scamshield.ai",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake income tax refund link",
+        "message": "Income Tax Dept: Your tax refund of Rs 15,400 has been approved. Submit account details to credit refund at http://incometax-refund-portal.club",
+        "expected_category": "Financial / Bank",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate banking OTP login",
+        "message": "123456 is your secret OTP for NetBanking login. Never share your OTP or PIN with anyone, including bank staff.",
+        "expected_category": "Account / Verification",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake verified badge social scam",
+        "message": "Meta Support: Your profile is eligible for the Blue Verification Badge. Confirm your password and phone number at http://meta-verify-badge-login.top",
+        "expected_category": "Account / Verification",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate mobile recharge update",
+        "message": "Recharge of Rs 299 successful for 9876543210. Plan validity: 28 days. Unlimited voice calls + 1.5GB/day.",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake WhatsApp lucky draw lottery",
+        "message": "KBC Lucky Draw: Your mobile number won Rs 25,00,000 in WhatsApp lucky draw! Contact Manager Mr. Sharma on WhatsApp +91-9988776655 to claim.",
+        "expected_category": "Prize / Reward",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate library book reminder",
+        "message": "Reminder: The book 'Clean Code' borrowed from Central Library is due tomorrow. Return or renew online at library.univ.edu",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake traffic fine challan link",
+        "message": "E-Challan Notice: Pending fine of Rs 500 for traffic violation on vehicle MH-12-AB-1234. Pay fine before court referral at http://echallan-pay-fine.site",
+        "expected_category": "Financial / Bank",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate security notification",
+        "message": "Security Alert: Your password for Google Account tejas@gmail.com was changed. If you did not make this change, review your account security.",
+        "expected_category": "Account / Verification",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake WhatsApp Gold upgrade scam",
+        "message": "Exclusive invite: Upgrade to WhatsApp Gold with video calling and custom themes. Download official update at http://whatsapp-gold-edition.xyz",
+        "expected_category": "Phishing / Suspicious Link",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate hotel reservation",
+        "message": "Reservation Confirmed: Grand Palace Hotel, Check-in: Oct 25, 2026. Total paid: Rs 4,500. We look forward to hosting you.",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake debit card block warning",
+        "message": "ALERT: Your HDFC Debit Card ending 4321 is blocked. Share your 16-digit card number and CVV to unblock instantly.",
+        "expected_category": "Account / Verification",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate BlueDart delivery update",
+        "message": "BlueDart: Shipment 8839201 is out for delivery today. Agent Contact: 9876543210. Delivery PIN: 4821.",
+        "expected_category": "Delivery / Parcel",
+        "expected_risk": "LOW",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake crypto trading scheme",
+        "message": "Earn guaranteed 500% returns in 24 hours! Deposit Rs 5,000 in AI Automated Crypto Bot. Registered by SEBI. Join t.me/double-crypto-returns",
+        "expected_category": "Prize / Reward",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate salary slip notification",
+        "message": "Your payslip for September 2026 has been generated and sent to your registered email address.",
+        "expected_category": "Financial / Bank",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake SIM deactivation threat",
+        "message": "Jio Alert: Your SIM card will be deactivated in 2 hours due to unverified Aadhaar. Call customer executive immediately at +91-9800011122",
+        "expected_category": "Account / Verification",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
+    },
+    {
+        "name": "Legitimate router setup confirmation",
+        "message": "Welcome to Airtel Xstream Fiber! Your connection is active. SSID: Airtel_Home_WiFi. Manage plan via Airtel Thanks App.",
+        "expected_category": "General / Unknown",
+        "expected_risk": "NO OBVIOUS INDICATORS",
+        "ground_truth": "LEGITIMATE"
+    },
+    {
+        "name": "Fake student scholarship scam",
+        "message": "Govt Scholarship Portal: You are selected for National Merit Scholarship worth Rs 50,000. Pay Rs 499 registration fee at http://scholarship-gov-registration.click",
+        "expected_category": "Job / Internship",
+        "expected_risk": "HIGH",
+        "ground_truth": "SCAM"
     }
 ]

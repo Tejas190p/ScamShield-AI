@@ -1,58 +1,59 @@
+import re
 
-def merge_risk_signals(
-    base_score: int,
-    base_reasons: list,
-    category_signals: list,
-) -> tuple:
-    """
-    Merge base and category-specific risk signals.
-    Avoid counting the same evidence twice.
-    """
-
-    reasons = list(base_reasons)
+def merge_risk_signals(base_score, base_reasons, category_signals, message=""):
     score = base_score
+    reasons = list(base_reasons)
 
+    # Extract reason descriptions normalized to lowercase strings
     existing_reasons = {
-        reason["reason"].lower()
-        for reason in base_reasons
+        (r.get("reason", "") if isinstance(r, dict) else str(r)).strip().lower()
+        for r in reasons
     }
 
-    has_sensitive_info = any(
-        "request for sensitive personal information" in reason
-        for reason in existing_reasons
-    )
+    for sig in category_signals:
+        sig_reason = (sig.get("reason", "") if isinstance(sig, dict) else str(sig)).strip().lower()
+        if sig_reason and sig_reason not in existing_reasons:
+            reasons.append(sig)
+            existing_reasons.add(sig_reason)
+            score += sig.get("points", 0) if isinstance(sig, dict) else 0
 
-    for signal in category_signals:
-        signal_reason = signal["reason"]
-        signal_key = signal_reason.lower()
+    if message:
+        msg_lower = message.lower()
 
-        # Skip signals already represented by base evidence.
-        duplicate = False
+        if re.search(r'\b(disconnected|deactivated|cut off|power will be|sim.*deactivat)\b', msg_lower):
+            if not any("disconnection" in t or "suspension" in t for t in existing_reasons):
+                r = {"reason": "Service disconnection or account deactivation threat", "points": 3}
+                reasons.append(r)
+                existing_reasons.add(r["reason"].lower())
+                score += 3
 
-        if any(term in signal_key for term in ("otp", "cvv", "pin")):
-            duplicate = has_sensitive_info
+        if re.search(r'\b(card number|cvv|expiry|card details|16-digit)\b', msg_lower):
+            if not any("card" in t or "sensitive" in t for t in existing_reasons):
+                r = {"reason": "Request for sensitive card or payment details", "points": 4}
+                reasons.append(r)
+                existing_reasons.add(r["reason"].lower())
+                score += 4
 
-        elif "account suspension" in signal_key:
-            duplicate = any(
-                "threat" in reason or "suspension" in reason
-                for reason in existing_reasons
-            )
+        if re.search(r'\b(trojan|virus|infected|infection|tech support|microsoft detected)\b', msg_lower):
+            if not any("malware" in t for t in existing_reasons):
+                r = {"reason": "Fake security or malware threat claim", "points": 4}
+                reasons.append(r)
+                existing_reasons.add(r["reason"].lower())
+                score += 4
 
-        elif "delivery fee request" in signal_key:
-            duplicate = any(
-                "money or payment-related language" in reason
-                for reason in existing_reasons
-            )
+        if re.search(r'\b(tax refund|e-challan|traffic fine|challan notice|scholarship.*fee)\b', msg_lower):
+            if not any("government" in t or "tax" in t for t in existing_reasons):
+                r = {"reason": "Government, tax, or penalty notice demand", "points": 3}
+                reasons.append(r)
+                existing_reasons.add(r["reason"].lower())
+                score += 3
 
-        if duplicate:
-            continue
-
-        score += signal["points"]
-        reasons.append({
-            "reason": signal_reason,
-            "points": signal["points"],
-        })
-        existing_reasons.add(signal_key)
+        if re.search(r'https?://[^\s]+\.(top|xyz|site|club|info|click|online)\b', msg_lower):
+            if not any("top-level domain" in t or "tld" in t for t in existing_reasons):
+                r = {"reason": "URL uses a high-risk or non-standard top-level domain", "points": 3}
+                reasons.append(r)
+                existing_reasons.add(r["reason"].lower())
+                score += 3
 
     return score, reasons
 

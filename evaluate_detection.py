@@ -34,6 +34,7 @@ def main():
             base_score=score,
             base_reasons=reasons,
             category_signals=category_signals,
+        message=case["message"],
         )
         actual_risk = get_risk_level(score)
 

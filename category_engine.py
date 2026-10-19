@@ -1,3 +1,4 @@
+import re
 def detect_category(message: str, analysis: dict) -> str:
     msg_lower = message.lower() if message else ""
     if any(p in msg_lower for p in ["hey mom", "hey dad", "lost my phone", "lost my wallet"]):
@@ -79,7 +80,25 @@ def detect_category(message: str, analysis: dict) -> str:
         return "Financial / Bank"
 
     # A URL alone is not evidence of phishing.
+    
+    text_low = text.lower() if 'text' in locals() else ""
+    if re.search(r'\b(trojan|virus|infection|tech support|microsoft)\b', text_low):
+        return "Impersonation"
+    if re.search(r'\b(electricity|power|sim|deactivat|disconnected)\b', text_low):
+        return "Account / Verification"
+    if re.search(r'\b(tax|refund|challan|fine|loan|crypto|btc)\b', text_low):
+        return "Financial / Bank"
+
     return "General / Unknown"
+
+    
+    text_low = text.lower() if 'text' in locals() else ""
+    if re.search(r'\b(trojan|virus|infection|tech support|microsoft)\b', text_low):
+        return "Impersonation"
+    if re.search(r'\b(electricity|power|sim|deactivat|disconnected)\b', text_low):
+        return "Account / Verification"
+    if re.search(r'\b(tax|refund|challan|fine|loan|crypto|btc)\b', text_low):
+        return "Financial / Bank"
 
     return "General / Unknown"
 

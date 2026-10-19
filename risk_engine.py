@@ -60,7 +60,7 @@ def merge_risk_signals(
 def get_risk_level(score: int) -> str:
     """Convert the final risk score into a risk level."""
 
-    if score >= 7:
+    if score >= 6:
         return "HIGH"
     if score >= 4:
         return "MEDIUM"

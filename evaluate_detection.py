@@ -3,32 +3,14 @@ from category_engine import detect_category
 from category_signals import detect_category_signals
 from risk_engine import merge_risk_signals, get_risk_level
 
-TEST_CASES = [
-    {"name": "Legitimate urgent security alert", "ground_truth": "LEGITIMATE", "message": "Urgent: A new sign-in to your account was detected from Chrome on Windows. If this was you, no action is required.", "expected_category": "Account / Verification", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Legitimate salary credit notification", "ground_truth": "LEGITIMATE", "message": "Your monthly salary of Rs 50,000 has been credited to your bank account ending in 4321.", "expected_category": "Financial / Bank", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Subtle emergency impersonation scam", "ground_truth": "SCAM", "message": "Hey Mom, I lost my phone and wallet. Please send 2000 rupees urgently to this UPI number to help me get home.", "expected_category": "Impersonation", "expected_risk": "MEDIUM"},
-    {"name": "Obfuscated short-link scam", "ground_truth": "SCAM", "message": "Your parcel delivery has failed. Update address and pay fee at http://bit.ly/3xY9z immediately.", "expected_category": "Delivery / Parcel", "expected_risk": "HIGH"},
-    {"name": "Legitimate delivery PIN notification", "ground_truth": "LEGITIMATE", "message": "Your Amazon order is out for delivery. Share OTP 8492 with delivery executive upon arrival.", "expected_category": "Delivery / Parcel", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Legitimate transaction OTP email", "ground_truth": "LEGITIMATE", "message": "123456 is your one-time password to complete your online purchase. Valid for 10 minutes.", "expected_category": "Account / Verification", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Obfuscated fee payment scam", "ground_truth": "SCAM", "message": "You won a lottery! P@y 500 rupees processing fee to claim your prize now.", "expected_category": "Prize / Reward", "expected_risk": "HIGH"},
-    {"name": "Suspicious TLD phishing link", "ground_truth": "SCAM", "message": "Your bank card is blocked. Verify details immediately at http://secure-bank-login.top/login", "expected_category": "Phishing / Suspicious Link", "expected_risk": "HIGH"},
-    {"name": "Fake prize with processing fee", "ground_truth": "SCAM", "message": "Congratulations! You won a prize. Pay a 999 processing fee to claim it.", "expected_category": "Prize / Reward", "expected_risk": "HIGH"},
-    {"name": "Job registration fee", "ground_truth": "SCAM", "message": "Job offer: pay a registration fee to apply for this position.", "expected_category": "Job / Internship", "expected_risk": "MEDIUM"},
-    {"name": "Account suspension threat", "ground_truth": "SCAM", "message": "Your account will be suspended today. Verify your account immediately.", "expected_category": "Account / Verification", "expected_risk": "HIGH"},
-    {"name": "Parcel delivery fee", "ground_truth": "SCAM", "message": "Your parcel delivery has failed. Pay the delivery fee to reschedule.", "expected_category": "Delivery / Parcel", "expected_risk": "MEDIUM"},
-    {"name": "Bank OTP request", "ground_truth": "SCAM", "message": "Your bank account needs verification. Send your OTP now.", "expected_category": "Account / Verification", "expected_risk": "MEDIUM"},
-    {"name": "Ordinary college announcement", "ground_truth": "LEGITIMATE", "message": "Reminder: the computer science lecture begins tomorrow at 10 AM in Room 204.", "expected_category": "General / Unknown", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Ordinary internship announcement", "ground_truth": "LEGITIMATE", "message": "The college placement cell will share internship opportunities during Friday's meeting.", "expected_category": "Job / Internship", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "General banking information", "ground_truth": "LEGITIMATE", "message": "The bank will be closed on Sunday. Regular services resume Monday.", "expected_category": "Financial / Bank", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Plain URL without suspicious indicators", "ground_truth": "LEGITIMATE", "message": "Please visit this link: https://example.com", "expected_category": "General / Unknown", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Fake refund message", "ground_truth": "SCAM", "message": "Your refund is pending. Pay a processing fee to receive your money.", "expected_category": "Financial / Bank", "expected_risk": "MEDIUM"},
-    {"name": "Impersonation with payment request", "ground_truth": "SCAM", "message": "A police officer demands payment immediately to avoid a penalty.", "expected_category": "Impersonation", "expected_risk": "MEDIUM"},
-    {"name": "Protective OTP warning", "ground_truth": "LEGITIMATE", "message": "Never share your OTP with anyone. Your bank will never ask for it.", "expected_category": "Financial / Bank", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Ordinary parcel update", "ground_truth": "LEGITIMATE", "message": "Your package will arrive tomorrow. No action is required.", "expected_category": "Delivery / Parcel", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Ordinary payment receipt", "ground_truth": "LEGITIMATE", "message": "Your payment of 500 rupees was successful. Thank you for your purchase.", "expected_category": "Financial / Bank", "expected_risk": "NO OBVIOUS INDICATORS"},
-    {"name": "Suspicious CVV request", "ground_truth": "SCAM", "message": "Send your CVV immediately to verify your card and prevent account closure.", "expected_category": "Account / Verification", "expected_risk": "MEDIUM"},
-    {"name": "Fake work-from-home offer", "ground_truth": "SCAM", "message": "Work from home and earn a salary. Pay an upfront registration fee to get started.", "expected_category": "Job / Internship", "expected_risk": "MEDIUM"},
-]
+# Loaded from external dataset
+import json
+from pathlib import Path
+
+DATASET_PATH = Path(__file__).parent / "eval_dataset.json"
+with open(DATASET_PATH, "r", encoding="utf-8") as f:
+    TEST_CASES = json.load(f)
+
 
 def main():
     category_passed = 0

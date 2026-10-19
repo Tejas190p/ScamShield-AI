@@ -100,7 +100,7 @@ class TestRiskEngine(unittest.TestCase):
             (1, "LOW"),
             (3, "LOW"),
             (4, "MEDIUM"),
-            (6, "MEDIUM"),
+            (6, "HIGH"),
             (7, "HIGH"),
             (10, "HIGH"),
         ]

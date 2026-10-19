@@ -376,7 +376,7 @@ def calculate_risk(result: dict) -> tuple:
             })
 
     # Risk level
-    if score >= 7:
+    if score >= 6:
         level = "HIGH"
     elif score >= 4:
         level = "MEDIUM"

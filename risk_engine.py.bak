@@ -1,0 +1,33 @@
+import re
+from normalizer import normalize_text
+
+def get_risk_level(score):
+    if score == 0:
+        return "NO OBVIOUS INDICATORS"
+    elif score <= 3:
+        return "LOW"
+    elif score <= 5:
+        return "MEDIUM"
+    else:
+        return "HIGH"
+
+def merge_risk_signals(base_score, base_reasons, category_signals, message=""):
+    score = base_score
+    reasons = list(base_reasons)
+
+    def get_reason_key(r):
+        if isinstance(r, dict):
+            return str(r.get("reason", "")).strip().lower()
+        return str(r).strip().lower()
+
+    existing_keys = {get_reason_key(r) for r in reasons if get_reason_key(r)}
+
+    # Deduplicate incoming category signals against base reasons
+    for sig in category_signals:
+        sig_key = get_reason_key(sig)
+        if sig_key and sig_key not in existing_keys:
+            reasons.append(sig)
+            existing_keys.add(sig_key)
+            score += sig.get("points", 0) if isinstance(sig, dict) else 0
+
+    return score, reasons

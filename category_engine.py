@@ -1,19 +1,46 @@
 import re
-def detect_category(message: str, analysis: dict) -> str:
-    msg_lower = message.lower() if message else ""
-    if any(p in msg_lower for p in ["hey mom", "hey dad", "lost my phone", "lost my wallet"]):
-        return "Impersonation"
-    if any(p in msg_lower for p in [".top/", ".xyz/", "secure-bank"]):
-        return "Phishing / Suspicious Link"
-    if "salary" in msg_lower and ("credited" in msg_lower or "bank" in msg_lower or "rs" in msg_lower):
-        return "Financial / Bank"
-    """
-    Classify a message using its strongest contextual indicators.
-    A category is a clue, not proof of fraud.
-    """
-    text = message.lower()
 
-    # Specific contexts take priority over generic financial terms.
+
+def detect_category(message: str, analysis: dict) -> str:
+    text = (message or "").lower()
+
+    # High-return crypto investment schemes.
+    crypto_scam_terms = [
+        "guaranteed 500%", "guaranteed returns", "crypto bot",
+        "crypto trading scheme", "double-crypto-returns",
+        "500% returns", "ai automated crypto",
+    ]
+    if any(term in text for term in crypto_scam_terms):
+        return "Prize / Reward"
+
+    # Fake WhatsApp Gold branding paired with a download link.
+    if "whatsapp gold" in text and (
+        "http://" in text or "https://" in text or "www." in text
+    ):
+        return "Phishing / Suspicious Link"
+
+    # Specific impersonation and suspicious-link patterns.
+    if any(p in text for p in [
+        "hey mom", "hey dad", "lost my phone", "lost my wallet"
+    ]):
+        return "Impersonation"
+
+    if any(p in text for p in [".top/", ".xyz/", "secure-bank"]):
+        return "Phishing / Suspicious Link"
+
+    # Payslips and payroll notifications are financial messages,
+    # but these terms alone are not evidence of fraud.
+    if any(term in text for term in [
+        "payslip", "pay slip", "salary slip", "payroll",
+        "salary statement"
+    ]):
+        return "Financial / Bank"
+
+    if "salary" in text and any(
+        term in text for term in ["credited", "bank", "rs", "inr"]
+    ):
+        return "Financial / Bank"
+
     reward_words = [
         "congratulations", "you won", "winner", "prize",
         "reward", "lottery", "cash prize", "gift", "lucky draw",
@@ -22,6 +49,7 @@ def detect_category(message: str, analysis: dict) -> str:
         "job offer", "job opportunity", "internship",
         "work from home", "part time job", "salary",
         "hiring", "selected for the job", "recruitment",
+        "scholarship", "student scholarship", "merit scholarship",
     ]
     delivery_words = [
         "delivery", "parcel", "package", "courier",
@@ -29,9 +57,9 @@ def detect_category(message: str, analysis: dict) -> str:
     ]
     account_words = [
         "verify your account", "account verification",
-        "account needs verification",
-        "account suspended", "account will be suspended",
-        "account blocked", "login verification", "security verification",
+        "account needs verification", "account suspended",
+        "account will be suspended", "account blocked",
+        "login verification", "security verification",
         "password reset", "password", "login credentials",
         "sign in", "sign-in",
     ]
@@ -47,27 +75,36 @@ def detect_category(message: str, analysis: dict) -> str:
         "refund", "reimbursement",
     ]
 
-    # Prioritize job-related fee requests over generic congratulations.
     job_fee_terms = (
         "registration fee", "registration fees", "security deposit",
         "training fee", "processing fee", "joining fee",
     )
-    has_job_context = any(word in text for word in job_words) or (
-        "job selection" in text or "job selected" in text
+    has_job_context = any(word in text for word in job_words) or any(
+        phrase in text for phrase in ["job selection", "job selected"]
     )
+
+    # A job or scholarship fee request takes priority over generic
+    # prize/reward wording.
     if has_job_context and any(term in text for term in job_fee_terms):
         return "Job / Internship"
+
     if any(word in text for word in reward_words):
         return "Prize / Reward"
 
-    if any(word in text for word in job_words):
+    if has_job_context:
         return "Job / Internship"
 
-    # Sensitive card-verification requests need specific classification.
     if any(word in text for word in ["cvv", "security code"]):
         return "Account / Verification"
 
     if any(word in text for word in account_words):
+        return "Account / Verification"
+
+    # Handle SIM deactivation and utility disconnection threats
+    # before the generic financial fallback.
+    if re.search(r"\b(sim|electricity|power)\b", text) and re.search(
+        r"\b(deactivat\w*|disconnect\w*|suspend\w*|block\w*)\b", text
+    ):
         return "Account / Verification"
 
     if any(word in text for word in delivery_words):
@@ -79,26 +116,11 @@ def detect_category(message: str, analysis: dict) -> str:
     if any(word in text for word in bank_words):
         return "Financial / Bank"
 
-    # A URL alone is not evidence of phishing.
-    
-    text_low = text.lower() if 'text' in locals() else ""
-    if re.search(r'\b(trojan|virus|infection|tech support|microsoft)\b', text_low):
+    if re.search(r"\b(trojan|virus|infection|tech support|microsoft)\b", text):
         return "Impersonation"
-    if re.search(r'\b(electricity|power|sim|deactivat|disconnected)\b', text_low):
-        return "Account / Verification"
-    if re.search(r'\b(tax|refund|challan|fine|loan|crypto|btc)\b', text_low):
+
+    if re.search(r"\b(tax|refund|challan|fine|loan|crypto|btc)\b", text):
         return "Financial / Bank"
 
+    # A URL by itself is not proof of phishing.
     return "General / Unknown"
-
-    
-    text_low = text.lower() if 'text' in locals() else ""
-    if re.search(r'\b(trojan|virus|infection|tech support|microsoft)\b', text_low):
-        return "Impersonation"
-    if re.search(r'\b(electricity|power|sim|deactivat|disconnected)\b', text_low):
-        return "Account / Verification"
-    if re.search(r'\b(tax|refund|challan|fine|loan|crypto|btc)\b', text_low):
-        return "Financial / Bank"
-
-    return "General / Unknown"
-

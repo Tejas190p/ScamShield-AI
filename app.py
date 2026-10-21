@@ -49,6 +49,9 @@ THREAT_WORDS = [
     "police",
     "penalty",
     "fine",
+    "deactivated",
+    "deactivation",
+    "will be deactivated",
 ]
 
 PERSONAL_INFO_WORDS = [
@@ -69,6 +72,7 @@ CONTACT_WORDS = [
     "contact immediately",
     "whatsapp",
     "telegram",
+    "call customer executive",
 ]
 
 BANK_IMPERSONATION_WORDS = [
@@ -375,6 +379,134 @@ def calculate_risk(result: dict) -> tuple:
                 "points": finding["points"],
             })
 
+    # Emergency family impersonation / urgency payment
+    if "lost my phone" in message_text or ("upi" in message_text and ("urgent" in message_text or "help" in message_text)):
+        score += 5
+        reasons.append({"reason": "Urgent emergency payment request from unrecognized number", "points": 5})
+
+    
+    # Shortener link combined with action/fee
+    if ("bit.ly" in message_text or "tinyurl" in message_text) and ("fee" in message_text or "pay" in message_text or "failed" in message_text):
+        score += 2
+        reasons.append({"reason": "Shortened link combined with action demand", "points": 2})
+
+    # Extreme crypto-return promises combined with an upfront deposit.
+    crypto_investment_terms = (
+        "crypto bot",
+        "crypto trading",
+        "automated crypto",
+        "bitcoin investment",
+    )
+    extreme_return_terms = (
+        "guaranteed 500%",
+        "500% returns",
+        "guaranteed returns",
+        "double-crypto-returns",
+    )
+    deposit_terms = (
+        "deposit",
+        "registration fee",
+        "processing fee",
+        "send money",
+        "transfer money",
+    )
+
+    if (
+        any(term in message_text for term in crypto_investment_terms)
+        and any(term in message_text for term in extreme_return_terms)
+        and any(term in message_text for term in deposit_terms)
+    ):
+        score += 4
+        reasons.append({
+            "reason": "Extreme crypto-return promise combined with an upfront deposit",
+            "points": 4,
+        })
+
+    # Fake WhatsApp Gold download link.
+    if (
+        "whatsapp gold" in message_text
+        and ("http://" in message_text or "https://" in message_text)
+    ):
+        score += 4
+        reasons.append({
+            "reason": "Fake WhatsApp Gold branding combined with a download link",
+            "points": 4,
+        })
+
+    # Card-blocking threat combined with a request for card credentials.
+    if (
+        any(term in message_text for term in [
+            "debit card", "credit card", "card is blocked",
+        ])
+        and any(term in message_text for term in [
+            "cvv", "16-digit card number", "card number",
+        ])
+        and any(term in message_text for term in [
+            "share", "send", "provide", "unblock",
+        ])
+    ):
+        score += 3
+        reasons.append({
+            "reason": "Card-blocking threat combined with a request for card credentials",
+            "points": 3,
+        })
+
+    # A delivery PIN notification is a mild caution signal, not proof of fraud.
+    if (
+        "out for delivery" in message_text
+        and "delivery pin" in message_text
+        and not any(term in message_text for term in [
+            "share your pin", "send your pin", "tell us your pin",
+            "provide your pin", "pay a fee", "delivery fee",
+        ])
+    ):
+        score += 1
+        reasons.append({
+            "reason": "Delivery PIN mentioned in a shipment notification",
+            "points": 1,
+        })
+
+    # Fake social-media verification badge asking for credentials.
+    if (
+        "blue verification badge" in message_text
+        and "password" in message_text
+        and ("http://" in message_text or "https://" in message_text)
+    ):
+        score += 1
+        reasons.append({
+            "reason": "Verification badge impersonation with a credential request and link",
+            "points": 1,
+        })
+
+    # Fake WhatsApp lucky-draw prize requiring direct contact to claim.
+    if (
+        "lucky draw" in message_text
+        and "whatsapp" in message_text
+        and "won" in message_text
+        and "claim" in message_text
+        and any(term in message_text for term in [
+            "contact manager", "claim manager", "contact mr."
+        ])
+    ):
+        score += 3
+        reasons.append({
+            "reason": "Large lucky-draw claim with a direct-contact request",
+            "points": 3,
+        })
+
+    # Fake traffic challan combining a court threat and payment link.
+    if (
+        ("challan" in message_text or "traffic violation" in message_text)
+        and ("court referral" in message_text or "court" in message_text)
+        and ("http://" in message_text or "https://" in message_text)
+        and any(term in message_text for term in ["pay fine", "pending fine"])
+    ):
+        score += 2
+        reasons.append({
+            "reason": "Traffic-fine threat combined with a payment link",
+            "points": 2,
+        })
+
     # Risk level
     if score >= 6:
         level = "HIGH"
@@ -386,16 +518,6 @@ def calculate_risk(result: dict) -> tuple:
         level = "NO OBVIOUS INDICATORS"
 
     
-    # Emergency family impersonation / urgency payment
-    if "lost my phone" in message_text or ("upi" in message_text and ("urgent" in message_text or "help" in message_text)):
-        score += 5
-        reasons.append({"reason": "Urgent emergency payment request from unrecognized number", "points": 5})
-
-    
-    # Shortener link combined with action/fee
-    if ("bit.ly" in message_text or "tinyurl" in message_text) and ("fee" in message_text or "pay" in message_text or "failed" in message_text):
-        score += 2
-        reasons.append({"reason": "Shortened link combined with action demand", "points": 2})
 
     return score, level, reasons
 

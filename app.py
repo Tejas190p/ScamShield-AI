@@ -52,6 +52,9 @@ THREAT_WORDS = [
     "deactivated",
     "deactivation",
     "will be deactivated",
+    "disconnected",
+    "disconnection",
+    "power will be disconnected",
 ]
 
 PERSONAL_INFO_WORDS = [
@@ -505,6 +508,110 @@ def calculate_risk(result: dict) -> tuple:
         reasons.append({
             "reason": "Traffic-fine threat combined with a payment link",
             "points": 2,
+        })
+
+    # A delivery-fee demand gains extra weight when paired with a URL.
+    if (
+        any(term in message_text for term in [
+            "delivery fee", "redelivery fee",
+        ])
+        and any(term in message_text for term in [
+            "failed", "reschedule", "redelivery", "cannot be delivered",
+        ])
+        and any(term in message_text for term in [
+            "pay", "payment", "fee",
+        ])
+        and bool(result.get("urls"))
+    ):
+        score += 3
+        reasons.append({
+            "reason": "Delivery problem and fee demand combined with a link",
+            "points": 3,
+        })
+
+    # Utility-disconnection threats combined with payment pressure.
+    if (
+        any(term in message_text for term in [
+            "disconnected", "disconnection",
+        ])
+        and any(term in message_text for term in [
+            "electricity", "power bill", "utility bill",
+        ])
+        and any(term in message_text for term in [
+            "pay", "payment", "tonight", "immediately",
+        ])
+    ):
+        score += 2
+        reasons.append({
+            "reason": "Utility-disconnection threat with payment pressure",
+            "points": 2,
+        })
+
+    # Tech-support scareware: malware warning plus an urgent support call.
+    if (
+        any(term in message_text for term in [
+            "trojan", "virus infection", "malware",
+        ])
+        and any(term in message_text for term in [
+            "technical support", "tech support",
+        ])
+        and any(term in message_text for term in [
+            "call", "contact",
+        ])
+    ):
+        score += 6
+        reasons.append({
+            "reason": "Malware warning combined with an urgent tech-support call",
+            "points": 6,
+        })
+
+    # Loan approval plus an upfront processing fee.
+    if (
+        any(term in message_text for term in [
+            "personal loan", "pre-approved loan", "loan is approved",
+        ])
+        and any(term in message_text for term in [
+            "processing fee", "file processing fee", "security deposit",
+        ])
+    ):
+        score += 2
+        reasons.append({
+            "reason": "Loan approval paired with an upfront fee",
+            "points": 2,
+        })
+
+    # Fake tax-refund links requesting account details.
+    if (
+        any(term in message_text for term in [
+            "tax refund", "income tax refund",
+        ])
+        and bool(result.get("urls"))
+        and any(term in message_text for term in [
+            "account details", "bank details", "submit account",
+        ])
+    ):
+        score += 5
+        reasons.append({
+            "reason": "Tax-refund claim with a link requesting account details",
+            "points": 5,
+        })
+
+    # Crypto recovery offers demanding clearance fees to release funds.
+    if (
+        any(term in message_text for term in [
+            "btc", "bitcoin", "crypto",
+        ])
+        and any(term in message_text for term in [
+            "clearance fee", "network fee",
+        ])
+        and any(term in message_text for term in [
+            "release funds", "inactive account",
+        ])
+    ):
+        score += 5
+        reasons.append({
+            "reason": "Crypto recovery offer demanding a clearance fee",
+            "points": 5,
         })
 
     # Risk level

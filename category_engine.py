@@ -61,7 +61,8 @@ def detect_category(message: str, analysis: dict) -> str:
         "account will be suspended", "account blocked",
         "login verification", "security verification",
         "password reset", "password", "login credentials",
-        "sign in", "sign-in",
+        "sign in", "sign-in", "kyc",
+        "account frozen", "account freeze", "frozen",
     ]
     impersonation_words = [
         "bank officer", "police officer", "government officer",
@@ -88,6 +89,32 @@ def detect_category(message: str, analysis: dict) -> str:
     if has_job_context and any(term in text for term in job_fee_terms):
         return "Job / Internship"
 
+    # Loan approval plus an upfront fee is a financial scam pattern.
+    if (
+        any(term in text for term in [
+            "personal loan", "pre-approved loan", "loan approved",
+        ])
+        and any(term in text for term in [
+            "processing fee", "file processing fee", "security deposit",
+            "registration fee",
+        ])
+    ):
+        return "Financial / Bank"
+
+    # Crypto recovery offers with a clearance fee and release promise.
+    if (
+        any(term in text for term in [
+            "btc", "bitcoin", "crypto",
+        ])
+        and any(term in text for term in [
+            "clearance fee", "network fee", "release funds",
+        ])
+        and any(term in text for term in [
+            "inactive account", "pay", "fee",
+        ])
+    ):
+        return "Prize / Reward"
+
     if any(word in text for word in reward_words):
         return "Prize / Reward"
 
@@ -112,6 +139,15 @@ def detect_category(message: str, analysis: dict) -> str:
 
     if any(word in text for word in impersonation_words):
         return "Impersonation"
+
+    # OTP messages about an actual login belong to account verification.
+    if (
+        ("otp" in text or "one-time password" in text)
+        and any(term in text for term in [
+            "login", "log in", "netbanking", "net banking",
+        ])
+    ):
+        return "Account / Verification"
 
     if any(word in text for word in bank_words):
         return "Financial / Bank"

@@ -2,3 +2,6 @@ scans.db
 __pycache__/
 *.pyc
 .env
+
+# Local backup files
+*.bak

@@ -134,7 +134,7 @@ def detect_category_signals(message: str, category: str) -> list:
         if "you won" in text or "winner" in text or has_prize_amount_claim:
             signals.append({
                 "reason": "Unexpected prize or winning claim",
-                "points": 3,
+                "points": 4,
             })
 
         if "claim your reward" in text or "claim prize" in text:

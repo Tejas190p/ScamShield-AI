@@ -325,8 +325,17 @@ def calculate_risk(result: dict) -> tuple:
             "points": 2,
         })
 
-    # Reward
-    if categories["reward"]:
+    # Reward: avoid double-counting a specific winning claim.
+    has_specific_winning_claim = (
+        "you won" in message_text
+        or "winner" in message_text
+        or bool(re.search(
+            r"\byou win\b.{0,30}\b\d+(?:[.,]\d+)?\s*k?\b",
+            message_text,
+        ))
+    )
+
+    if categories["reward"] and not has_specific_winning_claim:
         score += 2
         reasons.append({
             "reason": "Prize or unexpected-benefit language",

@@ -1,4 +1,6 @@
 
+import re
+
 from sensitive_detection import is_sensitive_request
 
 
@@ -122,7 +124,14 @@ def detect_category_signals(message: str, category: str) -> list:
 
     elif category == "Prize / Reward":
 
-        if "you won" in text or "winner" in text:
+        has_prize_amount_claim = bool(
+            re.search(
+                r"\byou win\b.{0,30}\b\d+(?:[.,]\d+)?\s*k?\b",
+                text,
+            )
+        )
+
+        if "you won" in text or "winner" in text or has_prize_amount_claim:
             signals.append({
                 "reason": "Unexpected prize or winning claim",
                 "points": 3,

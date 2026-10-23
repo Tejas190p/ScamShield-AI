@@ -115,7 +115,14 @@ def detect_category(message: str, analysis: dict) -> str:
     ):
         return "Prize / Reward"
 
-    if any(word in text for word in reward_words):
+    has_prize_amount_claim = bool(
+        re.search(
+            r"\byou win\b.{0,30}\b\d+(?:[.,]\d+)?\s*k?\b",
+            text,
+        )
+    )
+
+    if any(word in text for word in reward_words) or has_prize_amount_claim:
         return "Prize / Reward"
 
     if has_job_context:
